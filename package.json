@@ -1,0 +1,44 @@
+{
+  "name": "mediguardian",
+  "version": "1.2.0",
+  "private": true,
+  "description": "守药人 MediGuardian — 面向基层医疗的多模态用药安全 Agent",
+  "keywords": ["ai-agent", "rag", "mcp", "nextjs", "medication-safety"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "eval:rag": "node scripts/eval-retrieval.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "mcp": "node mcp/server.mjs",
+    "audit:report": "node scripts/audit-report.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.5.5",
+    "zod": "^3.23.8",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.1.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  }
+}
