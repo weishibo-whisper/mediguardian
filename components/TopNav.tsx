@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 const NAV = [
   { href: '/', label: '首页' },
   { href: '/console', label: '智能诊台' },
-  { href: '/arch', label: '技术架构' },
+  { href: '/evidence', label: '依据与规则' },
   { href: '/safety', label: '安全审计' },
 ];
 

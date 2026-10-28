@@ -92,7 +92,7 @@
 
 ```
 ┌──────────────────────────── 浏览器（React 19 / App Router）────────────────────────────┐
-│  落地页 /            智能诊台 /console            架构 /arch     审计 /safety   轨迹 /trace/[id] │
+│  落地页 /          智能诊台 /console          依据 /evidence   审计 /safety   轨迹 /trace/[id] │
 │  ├─ Zustand 会话状态（lib/store/useConsoleStore.ts）                                      │
 │  ├─ 自研 SSE 消费器（plan/step/tool_call/retrieval/token/safety/answer_meta/done）        │
 │  ├─ MiniMarkdown 渲染器（[n] → 可点击证据徽标）                                            │
@@ -127,7 +127,7 @@ chuanzhi/
 ├─ app/
 │  ├─ page.tsx                    # 落地页（痛点 → 方案 → 适用边界 → 技术底座）
 │  ├─ console/page.tsx            # 智能诊台（服务端组装患者数据包）
-│  ├─ arch/page.tsx               # 技术架构 + 实时检索演示
+│  ├─ evidence/page.tsx           # 依据与规则 + 依据检索（规则表 / 红旗 / 知识来源）
 │  ├─ safety/page.tsx             # 安全审计流水
 │  ├─ trace/[runId]/page.tsx      # 决策轨迹回放
 │  └─ api/
@@ -142,7 +142,7 @@ chuanzhi/
 │  ├─ TopNav.tsx                  # 大字 / 主题切换
 │  ├─ MiniMarkdown.tsx            # 自研渲染器（引用徽标）
 │  ├─ console/                    # Console / PatientRail / ChatPanel / InsightPanel / ConflictGraph
-│  ├─ arch/RetrievalPlayground.tsx
+│  ├─ evidence/RetrievalPlayground.tsx
 │  └─ ui/Bits.tsx
 ├─ lib/
 │  ├─ agent/runtime.ts            # ★ Agent 运行时
@@ -217,7 +217,7 @@ npm run mcp          # 启动 MCP Server（stdio，需先启动服务）
 npm run audit:report # 汇总审计日志 → docs/audit-summary.md
 ```
 
-> 提示：`eval:rag` / `smoke` 走的是真实 HTTP 接口，建议先访问一次 `/arch` 让检索路由完成编译
+> 提示：`eval:rag` / `smoke` 走的是真实 HTTP 接口，建议先访问一次 `/evidence` 让检索路由完成编译
 > （`next dev` 首次编译约 15–20 秒），再执行命令，避免把冷启动误当成失败。
 > 若 `next build` 与 `next dev` 交替使用，切换前清理 `.next` 目录最稳。
 

@@ -14,7 +14,7 @@
 import { chromium } from 'playwright';
 
 const BASE = (process.env.AUDIT_BASE || 'http://127.0.0.1:3000').replace(/\/$/, '');
-const ROUTES = ['/', '/console', '/arch', '/safety'];
+const ROUTES = ['/', '/console', '/evidence', '/safety'];
 
 const findings = [];
 let failures = 0;
@@ -129,7 +129,17 @@ async function main() {
 
       for (const route of ROUTES) {
         await page.goto(`${BASE}${route}`, { waitUntil: 'networkidle' });
-        await page.waitForTimeout(500);
+        // 幂等：只在未开启时点一次。之前无条件点击，第二个页面就会把它关掉（状态是跨页持久的）
+        const attr = await page.evaluate(() => document.documentElement.dataset.bigtext);
+        if (attr !== 'true') {
+          const toggle = page.getByRole('button', { name: /大字/ }).first();
+          if (await toggle.count()) await toggle.click();
+        }
+        // 等属性真正落地再测量，避免页面慢时读到未应用的状态
+        await page
+          .waitForFunction(() => document.documentElement.dataset.bigtext === 'true', { timeout: 5000 })
+          .catch(() => {});
+        await page.waitForTimeout(400);
         const state = await page.evaluate(() => ({
           fs: getComputedStyle(document.documentElement).fontSize,
           attr: document.documentElement.getAttribute('data-bigtext'),

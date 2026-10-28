@@ -72,10 +72,10 @@ async function main() {
   }
 
   // 5. 架构页 + 实时检索演示
-  await page.goto(`${BASE}/arch`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/evidence`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(700);
-  await shot('05-arch');
-  await shot('06-arch-full', { fullPage: true });
+  await shot('05-evidence');
+  await shot('06-evidence-full', { fullPage: true });
 
   // 6. 安全审计
   await page.goto(`${BASE}/safety`, { waitUntil: 'networkidle' });

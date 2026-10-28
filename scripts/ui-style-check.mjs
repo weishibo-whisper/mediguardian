@@ -16,7 +16,7 @@
 import { chromium } from 'playwright';
 
 const BASE = (process.env.CHECK_BASE || 'http://127.0.0.1:3000').replace(/\/$/, '');
-const ROUTES = ['/', '/console', '/arch', '/safety'];
+const ROUTES = ['/', '/console', '/evidence', '/safety'];
 const RADIUS_LIMIT = 14;
 
 const findings = [];

@@ -12,7 +12,7 @@
 | --- | --- |
 | `npx tsc --noEmit`（`strict: true`） | **0 error** |
 | `npm run build` | **✓ Compiled successfully**，13 条路由（1 静态 + 12 动态） |
-| 首屏 JS | 共享 chunk **103 kB**；`/console` 首屏 127 kB；`/arch` 112 kB |
+| 首屏 JS | 共享 chunk **103 kB**；`/console` 首屏 127 kB；`/evidence` 112 kB |
 
 构建输出（节选）：
 
@@ -27,7 +27,7 @@ Route (app)                              Size  First Load JS
 ├ ƒ /api/patients                      140 B         103 kB
 ├ ƒ /api/tools                         140 B         103 kB
 ├ ƒ /api/vision                        140 B         103 kB
-├ ƒ /arch                            2.89 kB         112 kB
+├ ƒ /evidence                            2.89 kB         112 kB
 ├ ƒ /console                         14.4 kB         127 kB
 ├ ƒ /safety                            165 B         106 kB
 └ ƒ /trace/[runId]                   1.61 kB         115 kB
@@ -41,7 +41,7 @@ Route (app)                              Size  First Load JS
 | --- | --- | --- |
 | `/` | 200 | 落地页（痛点 / 能力 / 评分点映射） |
 | `/console` | 200 | 三栏智能诊台 |
-| `/arch` | 200 | 架构页 + 实时检索演示 |
+| `/evidence` | 200 | 依据页（相互作用规则 / 红旗分级 / 依据检索 / 知识来源） |
 | `/safety` | 200 | 安全审计流水 |
 | `/trace/{runId}` | 200 | 决策轨迹回放（实测 `run_org3u25sx`） |
 
@@ -155,12 +155,12 @@ CI：`.github/workflows/ci.yml` 在每次 push / PR 跑 `typecheck → lint → 
 ```
 桌面 1440 /          无异常 · 横向溢出 无 · 按钮 2 个  · root 16px
 桌面 1440 /console   无异常 · 横向溢出 无 · 按钮 17 个 · root 16px
-桌面 1440 /arch      无异常 · 横向溢出 无 · 按钮 7 个  · root 16px
+桌面 1440 /evidence      无异常 · 横向溢出 无 · 按钮 7 个  · root 16px
 桌面 1440 /safety    无异常 · 横向溢出 无 · 按钮 2 个  · root 16px
 窄屏 1024 × 4 页面   无异常 · 横向溢出 无
 大字模式 /            root 18.5px
 大字模式 /console     root 18.5px
-大字模式 /arch        root 18.5px
+大字模式 /evidence        root 18.5px
 大字模式 /safety      root 18.5px
 
 ✓ 三个视口 × 四个页面：无运行时异常、无横向溢出、无缺失可访问名称
@@ -182,15 +182,15 @@ CI：`.github/workflows/ci.yml` 在每次 push / PR 跑 `typecheck → lint → 
 | --- | --- |
 | 对比度不合格 | **60 处 / 13 种颜色组合**（最差 2.49:1：深色主题主按钮白字） |
 | 点击区 < 24px | **38 处**（审计表「查看」33×17px） |
-| 320px 横向滚动 | **2 个页面**（`/arch` 475px、`/safety` 422px） |
+| 320px 横向滚动 | **2 个页面**（`/evidence` 475px、`/safety` 422px） |
 | 可见焦点环 | 0 处缺失（先前的 89 处是测量方法造成的假结论，见下） |
 
 **修复后**：
 
 ```
-light /  /console  /arch  /safety    文字样式 28/40/30/27 种 · 不合格 0 · 焦点 0 · 点击区 0
-dark  /  /console  /arch  /safety    同上，两套主题独立测量
-320px /  /console  /arch  /safety    scrollWidth 320 / 320（无横向滚动）
+light /  /console  /evidence  /safety    文字样式 28/40/30/27 种 · 不合格 0 · 焦点 0 · 点击区 0
+dark  /  /console  /evidence  /safety    同上，两套主题独立测量
+320px /  /console  /evidence  /safety    scrollWidth 320 / 320（无横向滚动）
 
 ── 对比度不合格（0）    无
 ── 缺少可见焦点环（0）  无

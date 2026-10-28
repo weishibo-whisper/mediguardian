@@ -24,6 +24,18 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        {/*
+          在 hydration 之前套用已保存的字号与主题。
+          不加这段，大字模式会先按 16px 渲染、React 挂载后再跳成 18.5px（明显闪一下）；
+          同时这也解释了另一个坑：字号属性依赖客户端 effect，页面慢一点时测量脚本会读到未应用的状态。
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var b=localStorage.getItem('mg.bigtext')==='1';var t=localStorage.getItem('mg.theme')==='dark';var d=document.documentElement;d.dataset.bigtext=String(b);d.dataset.theme=t?'dark':'light';}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-surface antialiased">
         <TopNav />
         <main className="mx-auto w-full max-w-[1440px] px-4 pb-16 pt-6 md:px-6">{children}</main>

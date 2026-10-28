@@ -89,8 +89,8 @@ export default async function HomePage() {
           <Link href="/console" className="btn-primary !px-3.5 !py-2">
             进入智能诊台 <ArrowRight size={14} />
           </Link>
-          <Link href="/arch" className="btn-ghost !px-3.5 !py-2">
-            <GitBranch size={13} /> 看技术架构
+          <Link href="/evidence" className="btn-ghost !px-3.5 !py-2">
+            <GitBranch size={13} /> 查依据与规则
           </Link>
           <span className="text-[11px] text-ink-mute">
             无需配置 API Key，内置规则引擎可完整演示
