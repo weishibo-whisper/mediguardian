@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit",
     "eval:rag": "node scripts/eval-retrieval.mjs",
     "smoke": "node scripts/smoke.mjs",
+    "smoke:mcp": "node scripts/mcp-smoke.mjs",
     "mcp": "node mcp/server.mjs",
     "audit:report": "node scripts/audit-report.mjs"
   },

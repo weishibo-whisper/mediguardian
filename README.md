@@ -208,6 +208,7 @@ npm start            # 生产启动
 npm run typecheck    # TypeScript 严格检查（tsc --noEmit）
 npm run lint         # ESLint（next/core-web-vitals）
 npm run smoke        # 端到端冒烟：3 个患者用例，校验 SSE 事件序列/引用/红旗转诊（需先启动服务）
+npm run smoke:mcp    # MCP 集成冒烟：官方 SDK Client 真实拉起 stdio Server，走 initialize→tools/list→tools/call
 npm run eval:rag     # 检索质量评测：14 条探针的 Hit@1 / Hit@3 / MRR（需先启动服务）
 npm run mcp          # 启动 MCP Server（stdio，需先启动服务）
 npm run audit:report # 汇总审计日志 → docs/audit-summary.md

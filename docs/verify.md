@@ -74,8 +74,26 @@ Route (app)                              Size  First Load JS
 
 ---
 
-## 4. 检索质量（`npm run eval:rag`）
+## 3.5 MCP 集成冒烟（`npm run smoke:mcp`）
 
+用官方 SDK 的 `Client` + `StdioClientTransport` 真实拉起 `mcp/server.mjs`，走完 `initialize → tools/list → tools/call`：
+
+```
+✓ tools/list 返回 5 个工具 — list_patients, check_interaction, lab_assess, search_kb, build_med_plan
+✓ 工具名与实现一致
+✓ 每个工具都有 inputSchema
+✓ list_patients 通过 HTTP 桥返回数据
+✓ check_interaction 识别出高风险组合 — 共发现 4 组相互作用：高…
+✓ search_kb 返回证据片段 — kb-nsaid-anticoag#0
+✓ build_med_plan 返回五段式方案 — 方案已生成：建议停用 3 项、调…
+✓ MCP Server 全部检查通过
+```
+
+说明：协议层（MCP）与实现层（`TOOLS` 注册表）分离成立——外部 Agent 调到的结果与端内 Agent 完全一致。
+
+---
+
+## 4. 检索质量（`npm run eval:rag`）
 | 指标 | 数值 |
 | --- | --- |
 | 探针数 | 14 |
