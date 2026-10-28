@@ -1,0 +1,203 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==================================================================
+ * 设计令牌（Design Tokens）
+ * 医疗场景的视觉基调：青绿=专业可信，暖橙=提醒，留白=降低认知负荷
+ * 适老化：支持 18px 基准字号、正文字号可放大到 1.25 倍、对比度 ≥ 7:1
+ * ================================================================== */
+:root {
+  --brand-50: 240 253 250;
+  --brand-100: 204 251 241;
+  --brand-200: 153 246 228;
+  --brand-500: 20 184 166;
+  --brand-600: 13 148 136;
+  --brand-700: 15 118 110;
+
+  --ink: 11 31 28;
+  --ink-soft: 52 82 76;
+  --ink-mute: 107 133 128;
+
+  --surface: 250 253 252;
+  --surface-raised: 255 255 255;
+  --surface-sunken: 241 246 244;
+  --line: 219 231 227;
+
+  --danger: 197 45 45;
+  --warn: 176 92 8;
+  --ok: 15 125 92;
+
+  --radius: 14px;
+}
+
+[data-theme='dark'] {
+  --brand-50: 8 34 30;
+  --brand-100: 11 56 49;
+  --brand-200: 15 82 72;
+  --brand-500: 45 212 191;
+  --brand-600: 20 184 166;
+  --brand-700: 13 148 136;
+
+  --ink: 232 242 239;
+  --ink-soft: 176 200 194;
+  --ink-mute: 130 158 152;
+
+  --surface: 8 20 18;
+  --surface-raised: 14 30 27;
+  --surface-sunken: 6 15 13;
+  --line: 32 56 51;
+
+  --danger: 248 113 113;
+  --warn: 251 191 36;
+  --ok: 52 211 153;
+}
+
+/* 适老化大字模式：整体按 rem 缩放，组件无需改动 */
+html[data-bigtext='true'] {
+  font-size: 18.5px;
+}
+
+* {
+  border-color: rgb(var(--line));
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: rgb(var(--surface));
+  color: rgb(var(--ink));
+  font-feature-settings: 'ss01', 'cv01';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 焦点可见性（无障碍：键盘用户必须能看到当前位置） */
+:focus-visible {
+  outline: 2px solid rgb(var(--brand-600));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* 自定义滚动条：细、低对比，避免抢注意力 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--line));
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--ink-mute) / 0.5);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ==================================================================
+ * 组件级工具类
+ * ================================================================== */
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface-raised shadow-soft;
+  }
+
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition
+      duration-150 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+  }
+
+  .btn-ghost {
+    @apply btn border border-line bg-surface-raised text-ink-soft hover:border-brand-200 hover:text-ink;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium leading-5;
+  }
+
+  .kbd {
+    @apply rounded border border-line bg-surface-sunken px-1.5 py-0.5 font-mono text-[10px] text-ink-mute;
+  }
+
+  /* 网底纹理：给大面积留白一点质感，不干扰阅读 */
+  .grid-bg {
+    background-image:
+      radial-gradient(circle at 1px 1px, rgb(var(--line)) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+}
+
+/* ==================================================================
+ * AI 回答的 Markdown 渲染样式（自研轻量渲染器配套）
+ * ================================================================== */
+.md {
+  @apply text-[0.95rem] leading-[1.85] text-ink;
+}
+.md h3 {
+  @apply mb-1.5 mt-4 first:mt-0 text-[0.95rem] font-semibold tracking-tight text-brand-700;
+}
+.md p {
+  @apply my-1.5;
+}
+.md ol,
+.md ul {
+  @apply my-1.5 space-y-1 pl-5;
+}
+.md ol {
+  @apply list-decimal;
+}
+.md ul {
+  @apply list-disc;
+}
+.md li {
+  @apply marker:text-ink-mute;
+}
+.md strong {
+  @apply font-semibold text-ink;
+}
+.md blockquote {
+  @apply my-3 rounded-lg border-l-2 border-brand-500 bg-brand-50/60 px-3 py-2 text-[0.8rem] leading-relaxed text-ink-soft;
+}
+.md code {
+  @apply rounded bg-surface-sunken px-1 py-0.5 font-mono text-[0.8em];
+}
+
+/* 流式输出光标的呼吸感 */
+.streaming-caret::after {
+  content: '▍';
+  @apply ml-0.5 inline-block text-brand-500;
+  animation: caret 1s step-end infinite;
+}
+
+@keyframes caret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ==================================================================
+ * 动效：尊重 prefers-reduced-motion（无障碍硬要求）
+ * ================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
