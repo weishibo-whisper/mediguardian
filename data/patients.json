@@ -1,0 +1,87 @@
+[
+  {
+    "id": "p-001",
+    "name": "王秀兰",
+    "age": 78,
+    "sex": "女",
+    "region": "河南·周口·某县",
+    "conditions": ["非瓣膜性心房颤动", "高血压 2 级", "2 型糖尿病（12 年）", "双膝骨关节炎", "轻度认知下降"],
+    "labs": { "eGFR": 42, "creatinine": 132, "INR": 3.8, "potassium": 4.3, "HbA1c": 8.1, "BP": "158/86", "hemoglobin": 102 },
+    "meds": [
+      { "drugId": "warfarin", "dose": "2.5 mg", "freq": "每晚一次", "source": "县医院处方", "since": "2023-04" },
+      { "drugId": "aspirin", "dose": "100 mg", "freq": "每日一次", "source": "自行加服（听邻居说防血栓）", "since": "2025-11" },
+      { "drugId": "ibuprofen", "dose": "300 mg", "freq": "疼痛时每日 2–3 次", "source": "村卫生室自购", "since": "2026-02" },
+      { "drugId": "amlodipine", "dose": "5 mg", "freq": "每日一次", "source": "县医院处方", "since": "2022-09" },
+      { "drugId": "metformin", "dose": "0.5 g", "freq": "每日两次", "source": "县医院处方", "since": "2019-06" },
+      { "drugId": "glibenclamide", "dose": "5 mg", "freq": "每日一次", "source": "乡镇卫生院处方", "since": "2021-03" },
+      { "drugId": "calcium-carbonate", "dose": "600 mg", "freq": "每日一次", "source": "子女购买", "since": "2024-10" }
+    ],
+    "adherence": { "score": 62, "note": "记不住服药时间，常把降压药与止痛药混在一个盒子里" },
+    "chiefComplaint": "最近膝盖疼得厉害，自己加了止痛药；这两天刷牙牙龈出血，昨天大便发黑",
+    "family": { "name": "李梅", "relation": "女儿", "phone": "138****6621", "available": "周末回村" },
+    "lastVisit": "2026-03-12",
+    "riskNotes": ["INR 3.8 伴出血征象", "抗凝 + 抗血小板 + NSAID 三重叠加", "eGFR 42 且使用二甲双胍与格列本脲", "血红蛋白 102 g/L 提示慢性失血"]
+  },
+  {
+    "id": "p-002",
+    "name": "李国强",
+    "age": 66,
+    "sex": "男",
+    "region": "四川·绵阳·某镇",
+    "conditions": ["慢性心力衰竭（HFrEF，EF 38%）", "高血压", "慢性肾脏病 3b 期", "痛风"],
+    "labs": { "eGFR": 36, "creatinine": 158, "INR": 0, "potassium": 5.6, "HbA1c": 6.2, "BP": "136/82", "hemoglobin": 128 },
+    "meds": [
+      { "drugId": "enalapril", "dose": "10 mg", "freq": "每日两次", "source": "市医院处方", "since": "2024-01" },
+      { "drugId": "spironolactone", "dose": "20 mg", "freq": "每日一次", "source": "市医院处方", "since": "2024-01" },
+      { "drugId": "furosemide", "dose": "20 mg", "freq": "每日一次", "source": "市医院处方", "since": "2024-01" },
+      { "drugId": "ibuprofen", "dose": "400 mg", "freq": "痛风发作时每日三次", "source": "药店自购", "since": "2026-01" },
+      { "drugId": "atorvastatin", "dose": "20 mg", "freq": "每晚一次", "source": "市医院处方", "since": "2024-01" }
+    ],
+    "adherence": { "score": 78, "note": "心衰药按时吃，但痛风一疼就自己去药店买止痛药" },
+    "chiefComplaint": "脚趾痛风又犯了，吃了三天止痛药，这两天觉得心慌、腿更肿了",
+    "family": { "name": "李强", "relation": "儿子", "phone": "139****3308", "available": "每晚饭后在家" },
+    "lastVisit": "2026-03-02",
+    "riskNotes": ["血钾 5.6 mmol/L 合并 ACEI + 螺内酯", "NSAID 三联打击，eGFR 36", "痛风急性期用药选择不当"]
+  },
+  {
+    "id": "p-003",
+    "name": "张桂英",
+    "age": 82,
+    "sex": "女",
+    "region": "浙江·丽水·某乡",
+    "conditions": ["原发性高血压", "高脂血症", "慢性失眠（15 年）", "骨质疏松", "既往跌倒 2 次"],
+    "labs": { "eGFR": 58, "creatinine": 96, "INR": 0, "potassium": 4.0, "HbA1c": 5.8, "BP": "148/78", "hemoglobin": 118 },
+    "meds": [
+      { "drugId": "amlodipine", "dose": "5 mg", "freq": "每日一次", "source": "乡镇卫生院处方", "since": "2020-05" },
+      { "drugId": "atorvastatin", "dose": "20 mg", "freq": "每晚一次", "source": "乡镇卫生院处方", "since": "2021-08" },
+      { "drugId": "estazolam", "dose": "1 mg", "freq": "每晚一次", "source": "卫生院处方（已连续 3 年）", "since": "2023-01" },
+      { "drugId": "diazepam", "dose": "2.5 mg", "freq": "睡不着时加服", "source": "邻居给的", "since": "2026-02" },
+      { "drugId": "diphenhydramine", "dose": "25 mg", "freq": "皮肤痒时服用", "source": "药店自购", "since": "2025-12" },
+      { "drugId": "calcium-carbonate", "dose": "600 mg", "freq": "每日一次", "source": "子女购买", "since": "2023-06" }
+    ],
+    "adherence": { "score": 70, "note": "睡眠药越吃越多，白天犯困，夜里起夜容易摔倒" },
+    "chiefComplaint": "晚上睡不着，自己加了一片安定，白天头晕，上周在院子里摔了一跤",
+    "family": { "name": "张丽", "relation": "孙女", "phone": "137****9012", "available": "每天视频" },
+    "lastVisit": "2026-02-18",
+    "riskNotes": ["苯二氮䓬类叠加（艾司唑仑 + 地西泮）", "第一代抗组胺药抗胆碱能负荷", "反复跌倒，Beers 清单多重不适当用药"]
+  },
+  {
+    "id": "p-004",
+    "name": "陈明",
+    "age": 55,
+    "sex": "男",
+    "region": "江苏·盐城·某镇",
+    "conditions": ["2 型糖尿病（5 年）", "高血压", "肥胖（BMI 29）"],
+    "labs": { "eGFR": 88, "creatinine": 82, "INR": 0, "potassium": 4.1, "HbA1c": 7.2, "BP": "132/84", "hemoglobin": 142 },
+    "meds": [
+      { "drugId": "metformin", "dose": "0.5 g", "freq": "每日两次", "source": "县医院处方", "since": "2021-04" },
+      { "drugId": "amlodipine", "dose": "5 mg", "freq": "每日一次", "source": "县医院处方", "since": "2021-04" },
+      { "drugId": "atorvastatin", "dose": "10 mg", "freq": "每晚一次", "source": "县医院处方", "since": "2022-11" }
+    ],
+    "adherence": { "score": 88, "note": "用药规律，偶尔忘记晚上他汀" },
+    "chiefComplaint": "想了解二甲双胍要不要长期吃，最近体重降了 4 斤",
+    "family": { "name": "陈小雨", "relation": "女儿", "phone": "150****7788", "available": "周末" },
+    "lastVisit": "2026-03-15",
+    "riskNotes": ["整体方案较规范，可作为对照组演示"]
+  }
+]

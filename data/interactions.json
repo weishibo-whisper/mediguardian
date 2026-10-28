@@ -1,0 +1,191 @@
+[
+  {
+    "id": "ix-warfarin-aspirin",
+    "a": "warfarin",
+    "b": "aspirin",
+    "severity": "high",
+    "mechanism": "抗凝作用与抗血小板作用叠加，同时阿司匹林损伤胃黏膜",
+    "action": "除机械瓣/近期支架等明确指征外，不建议常规联用；必须联用时选最低有效剂量并加 PPI 胃黏膜保护，监测大便隐血与血红蛋白",
+    "evidence": ["kb-anticoag-bleeding", "kb-antiplatelet"]
+  },
+  {
+    "id": "ix-warfarin-nsaid",
+    "a": "warfarin",
+    "b": "ibuprofen",
+    "severity": "high",
+    "mechanism": "NSAID 抑制血小板并损伤胃黏膜，部分 NSAID 还干扰华法林代谢与蛋白结合",
+    "action": "避免联用；疼痛优先选对乙酰氨基酚（需注意日剂量上限），必要时换用局部外用制剂",
+    "evidence": ["kb-nsaid-anticoag"]
+  },
+  {
+    "id": "ix-warfarin-nsaid2",
+    "a": "warfarin",
+    "b": "diclofenac",
+    "severity": "high",
+    "mechanism": "消化道出血风险叠加，双氯芬酸心血管风险亦较高",
+    "action": "避免联用；改用对乙酰氨基酚或外用 NSAID，并复评 INR",
+    "evidence": ["kb-nsaid-anticoag"]
+  },
+  {
+    "id": "ix-warfarin-amiodarone",
+    "a": "warfarin",
+    "b": "amiodarone",
+    "severity": "high",
+    "mechanism": "胺碘酮抑制 CYP2C9/3A4，使华法林暴露升高，INR 显著上升",
+    "action": "联用初期华法林常需减量 30%–50%，1 周内复查 INR，之后加密监测",
+    "evidence": ["kb-anticoag-bleeding", "kb-arrhythmia-drugs"]
+  },
+  {
+    "id": "ix-warfarin-clarithromycin",
+    "a": "warfarin",
+    "b": "clarithromycin",
+    "severity": "high",
+    "mechanism": "大环内酯类抑制华法林代谢，INR 升高、出血风险增加；抗菌药还改变肠道菌群影响维生素 K",
+    "action": "尽量选用相互作用小的抗菌药；必须联用时第 3–5 天复查 INR，观察出血征象",
+    "evidence": ["kb-antibiotics-interaction", "kb-anticoag-bleeding"]
+  },
+  {
+    "id": "ix-acei-spironolactone",
+    "a": "enalapril",
+    "b": "spironolactone",
+    "severity": "high",
+    "mechanism": "双重抑制醛固酮系统，钾排泄减少，高钾血症风险显著升高，肾功能不全时更明显",
+    "action": "联用需明确心衰指征，起始 1 周内复查血钾与肌酐；血钾 > 5.0 mmol/L 需下调剂量或停用螺内酯",
+    "evidence": ["kb-hyperkalemia", "kb-heart-failure"]
+  },
+  {
+    "id": "ix-arb-spironolactone",
+    "a": "losartan",
+    "b": "spironolactone",
+    "severity": "high",
+    "mechanism": "ARB 与保钾利尿剂叠加升高血钾",
+    "action": "同 ACEI 联用原则，监测血钾与肌酐，避免同时补钾或含钾盐替代品",
+    "evidence": ["kb-hyperkalemia"]
+  },
+  {
+    "id": "ix-acei-nsaid",
+    "a": "enalapril",
+    "b": "ibuprofen",
+    "severity": "high",
+    "mechanism": "NSAID 抑制前列腺素合成，削弱入球小动脉扩张，与 ACEI 联用可致急性肾损伤并减弱降压效果",
+    "action": "避免长期联用；确需短期止痛时监测肌酐与血压，保持足够饮水",
+    "evidence": ["kb-triple-whammy", "kb-nsaid-renal"]
+  },
+  {
+    "id": "ix-triple-whammy",
+    "a": "furosemide",
+    "b": "ibuprofen",
+    "severity": "high",
+    "mechanism": "利尿剂 + ACEI/ARB + NSAID 构成“三联打击”，急性肾损伤风险成倍增加",
+    "action": "识别三联组合即视为高风险，建议停用 NSAID、评估容量状态并在 3–7 天内复查肾功能",
+    "evidence": ["kb-triple-whammy"]
+  },
+  {
+    "id": "ix-acei-furosemide",
+    "a": "enalapril",
+    "b": "furosemide",
+    "severity": "moderate",
+    "mechanism": "利尿导致容量不足时 ACEI 更易引起肌酐升高与低血压",
+    "action": "监测立卧位血压、肌酐与电解质，避免过度利尿",
+    "evidence": ["kb-heart-failure", "kb-triple-whammy"]
+  },
+  {
+    "id": "ix-clopidogrel-omeprazole",
+    "a": "clopidogrel",
+    "b": "omeprazole",
+    "severity": "moderate",
+    "mechanism": "奥美拉唑抑制 CYP2C19，可能减少氯吡格雷活性代谢物生成",
+    "action": "需 PPI 保护胃黏膜时优先选择泮托拉唑，或评估改用其他抗血小板方案",
+    "evidence": ["kb-antiplatelet", "kb-ppi"]
+  },
+  {
+    "id": "ix-simvastatin-clarithromycin",
+    "a": "simvastatin",
+    "b": "clarithromycin",
+    "severity": "high",
+    "mechanism": "强 CYP3A4 抑制使辛伐他汀血药浓度大幅升高，肌病与横纹肌溶解风险增加",
+    "action": "抗感染期间暂停辛伐他汀，或改用相互作用小的他汀（如瑞舒伐他汀/普伐他汀）",
+    "evidence": ["kb-statin-muscle", "kb-antibiotics-interaction"]
+  },
+  {
+    "id": "ix-digoxin-amiodarone",
+    "a": "digoxin",
+    "b": "amiodarone",
+    "severity": "high",
+    "mechanism": "胺碘酮抑制 P-糖蛋白，地高辛浓度升高，易致中毒",
+    "action": "联用时地高辛减量约 50%，监测血药浓度、心率与血钾",
+    "evidence": ["kb-digoxin-toxicity"]
+  },
+  {
+    "id": "ix-digoxin-furosemide",
+    "a": "digoxin",
+    "b": "furosemide",
+    "severity": "moderate",
+    "mechanism": "利尿导致低钾低镁，增强地高辛毒性",
+    "action": "监测血钾（目标 ≥ 4.0 mmol/L）与地高辛浓度，及时补钾",
+    "evidence": ["kb-digoxin-toxicity"]
+  },
+  {
+    "id": "ix-benzodiazepine-opioid-cns",
+    "a": "estazolam",
+    "b": "diazepam",
+    "severity": "high",
+    "mechanism": "两种苯二氮䓬类叠加，过度镇静、呼吸抑制与跌倒风险显著升高",
+    "action": "避免同类药物叠加；老年人应逐步减停，采用非药物睡眠干预",
+    "evidence": ["kb-beers-elderly", "kb-falls"]
+  },
+  {
+    "id": "ix-glimepiride-renal",
+    "a": "glibenclamide",
+    "b": "metformin",
+    "severity": "moderate",
+    "mechanism": "长效磺脲类在肾功能不全时蓄积，低血糖风险叠加老年人的进食不规律",
+    "action": "老年人避免格列本脲，改用低血糖风险更低的方案；肾功能不全时重新评估降糖方案",
+    "evidence": ["kb-beers-elderly", "kb-diabetes-basics"]
+  },
+  {
+    "id": "ix-levofloxacin-cation",
+    "a": "levofloxacin",
+    "b": "calcium-carbonate",
+    "severity": "moderate",
+    "mechanism": "钙、铁、镁、铝等多价阳离子与喹诺酮螯合，显著降低吸收",
+    "action": "两药间隔至少 2 小时服用（喹诺酮先服）",
+    "evidence": ["kb-antibiotics-interaction"]
+  },
+  {
+    "id": "ix-levothyroxine-calcium",
+    "a": "levothyroxine",
+    "b": "calcium-carbonate",
+    "severity": "moderate",
+    "mechanism": "钙剂与左甲状腺素形成不溶性复合物，降低吸收",
+    "action": "间隔至少 4 小时；左甲状腺素晨起空腹服用",
+    "evidence": ["kb-antibiotics-interaction"]
+  },
+  {
+    "id": "ix-nsaid-htn",
+    "a": "ibuprofen",
+    "b": "amlodipine",
+    "severity": "moderate",
+    "mechanism": "NSAID 引起水钠潴留并削弱降压药疗效，血压可升高 5 mmHg 左右",
+    "action": "短期使用并监测血压；血压未达标者优先停用 NSAID",
+    "evidence": ["kb-nsaid-renal", "kb-hypertension-basics"]
+  },
+  {
+    "id": "ix-nsaid-renal-risk",
+    "a": "ibuprofen",
+    "b": "hydrochlorothiazide",
+    "severity": "moderate",
+    "mechanism": "脱水与前列腺素抑制叠加，肾灌注下降",
+    "action": "避免脱水状态下使用；监测肌酐与电解质",
+    "evidence": ["kb-triple-whammy"]
+  },
+  {
+    "id": "ix-prazosin-furosemide",
+    "a": "prazosin",
+    "b": "furosemide",
+    "severity": "moderate",
+    "mechanism": "容量不足叠加 α 阻滞，首剂体位性低血压与晕厥风险升高",
+    "action": "哌唑嗪睡前小剂量起始，起床遵循“三个 30 秒”，监测立卧位血压",
+    "evidence": ["kb-falls"]
+  }
+]
