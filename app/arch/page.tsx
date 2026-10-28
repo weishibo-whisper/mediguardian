@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * 架构说明页
- * 面向评委：一页讲清「数据怎么流动、每一步为什么这么选、可以怎么验证」。
+ * 面向工程读者：一页讲清「数据怎么流动、每一步为什么这么选、可以怎么验证」。
  * 所有数字（文档数/分块数/工具数）都是服务端实时统计，不是写死的文案。
  */
 export default async function ArchPage() {
@@ -134,7 +134,7 @@ export default async function ArchPage() {
       <section className="card space-y-3 p-4">
         <SectionTitle
           title="安全与可控性：四道闸门"
-          desc="对应评审维度「AI 安全与可控性」——不是免责声明，而是可执行的技术约束"
+          desc="不是免责声明，而是可执行的技术约束：红旗强制转诊、PII 脱敏、诊断断言拦截、无引用剂量拦截"
         />
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {[

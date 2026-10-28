@@ -4,7 +4,7 @@ import type { KbHit, Patient, RedFlagRule, SafetyFlag, SafetyReport } from '@/li
 import { getRedFlags } from '@/lib/data';
 
 /**
- * AI 安全与可控性层（对应评分表「AI 安全与可控性 4%」）
+ * AI 安全与可控性层
  * ------------------------------------------------------------------
  * 四道闸门：
  *  1. 输入侧：红旗症状识别（触发强制转诊）+ PII 脱敏（姓名/手机号/身份证/银行卡）

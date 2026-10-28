@@ -6,7 +6,7 @@
  *
  * 关键设计：不使用各厂商私有的 function-calling 字段，而是用「结构化 JSON 工具协议」：
  * 规划阶段让模型输出 JSON（含工具名 + 参数），运行时解析 → 执行 → 回填。
- * 好处：任何 OpenAI 兼容模型都能跑 Agent 循环，评委换成自己的 key 也不会挂。
+ * 好处：任何 OpenAI 兼容模型都能跑 Agent 循环，换用自己的 key 也不会挂。
  */
 
 export type ProviderName = 'mock' | 'openai' | 'deepseek' | 'zhipu' | 'qwen' | 'anthropic' | 'custom';

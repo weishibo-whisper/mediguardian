@@ -1,7 +1,7 @@
 # 守药人 MediGuardian
 
 > **面向基层医疗的多模态用药安全 Agent**
-> 让每一位老人都能用对药 —— AI Native Web 应用参赛作品
+> 让每一位老人都能用对药 —— AI Native 基层用药安全 Agent
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-149eca)](https://react.dev/)
@@ -52,7 +52,7 @@
 ```
 
 - 不依赖向量数据库与外部 embedding 服务：百级分块内存检索 < 5ms，消除部署失败面；接入真实 embedding 只需替换 `embed()`。
-- 每个命中都带 **BM25 / 向量 / RRF / 重排** 四项打分明细，评委可当场追问「为什么是这条证据」。
+- 每个命中都带 **BM25 / 向量 / RRF / 重排** 四项打分明细，任何人都能当场追问「为什么是这条证据」。
 - **领域同义词扩展**（`data/synonyms.json`，18 组）：哈希向量没有真实语义泛化能力，所以显式把「心慌 / 腿肿 / 着不了觉」映射到文档术语。分工是刻意的——**BM25 只用原话保精确，扩展词只进稠密路做泛化**。
 - 附离线评测脚本：`npm run eval:rag` 输出 **21 条探针**（术语 14 + 口语 7）的 Hit@1 / Hit@3 / MRR。实测：术语型 0.714 / 0.929 / 0.836；口语型因同义词扩展从 **0.429 提到 0.714**（`RAG_SYNONYMS=off` 可复现基线）。
 
@@ -125,7 +125,7 @@
 ```
 chuanzhi/
 ├─ app/
-│  ├─ page.tsx                    # 落地页（痛点 → 方案 → 评分点自检）
+│  ├─ page.tsx                    # 落地页（痛点 → 方案 → 适用边界 → 技术底座）
 │  ├─ console/page.tsx            # 智能诊台（服务端组装患者数据包）
 │  ├─ arch/page.tsx               # 技术架构 + 实时检索演示
 │  ├─ safety/page.tsx             # 安全审计流水
@@ -158,7 +158,7 @@ chuanzhi/
 ├─ scripts/
 │  ├─ eval-retrieval.mjs          # 检索质量评测（Hit@1/Hit@3/MRR）
 │  └─ audit-report.mjs            # 审计汇总 → docs/audit-summary.md
-└─ docs/                          # 技术文档 / 视频脚本 / 答辩要点 / 评分自评
+└─ docs/                          # 技术文档 / 视频脚本 / 演示要点 / 自评
 ```
 
 ---

@@ -13,8 +13,8 @@ import { clip, termFreq, tokenize } from './text';
  * 为什么不用现成向量库：
  *  - 知识库规模小（十几篇文档、百级分块），内存检索延迟 < 5ms，引入 Milvus/pgvector
  *    只会增加部署失败面；
- *  - 比赛评审需要「可解释性」：每个命中都带着 BM25/向量/RRF/重排四项分明细，
- *    评委可以当场追问「为什么这条证据被选中」，答案在 UI 里直接可见。
+ *  - 可解释性是硬需求：每个命中都带着 BM25/向量/RRF/重排四项分明细，
+ *    任何人都能当场追问「为什么这条证据被选中」，答案在 UI 里直接可见。
  *  - 若后续接入真实 embedding（bge-m3 等），只需替换 embed()，检索层零改动。
  */
 
@@ -256,7 +256,7 @@ export function verifyCitations(answer: string, hits: KbHit[]) {
   };
 }
 
-/** 知识库统计信息（架构页与答辩演示用） */
+/** 知识库统计信息（架构页展示用） */
 export async function getKbStats() {
   const index = await getIndex();
   return {

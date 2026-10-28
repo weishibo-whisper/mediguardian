@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * 决策轨迹回放
- * 这是答辩现场最有说服力的一页：任意一次运行都能逐帧展开——
+ * 这一页是整个产品最有说服力的地方：任意一次运行都能逐帧展开——
  * 规划了哪几步、每个工具的入参与返回、检索到哪些证据、守门改写了什么、最终答案是什么。
  */
 export default async function TracePage({ params }: { params: Promise<{ runId: string }> }) {

@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TopNav />
         <main className="mx-auto w-full max-w-[1440px] px-4 pb-16 pt-6 md:px-6">{children}</main>
         <footer className="border-t border-line/70 py-6 text-center text-xs leading-relaxed text-ink-mute">
-          <p>守药人 MediGuardian · AI Agent 用药安全辅助系统 · 参赛作品（演示数据，非临床依据）</p>
+          <p>守药人 MediGuardian · AI Agent 用药安全辅助系统 · 演示数据，非临床依据</p>
           <p className="mt-1">
             本系统输出仅供基层医护与家属参考，不构成诊断或处方，任何用药调整须经执业医师确认
           </p>

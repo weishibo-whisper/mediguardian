@@ -7,7 +7,6 @@ import {
   Layers,
   Mic,
   ShieldCheck,
-  Sparkles,
   Timer,
   Users,
   Workflow,
@@ -20,8 +19,11 @@ export const dynamic = 'force-dynamic';
 
 /**
  * 落地页
- * 叙事结构：真实痛点 → 我们怎么做 → 为什么难被替代 → 技术底座 → 评分点自检
+ * 叙事结构：真实痛点 → 我们怎么做 → 交互范式 → 适用边界 → 技术底座
  * 全部为静态文案 + 少量服务端统计，首屏无阻塞请求。
+ *
+ * 刻意不写「对照评审维度逐项落地」这类内容：界面是给村医和家属看的，
+ * 不是给评分表看的。面向评审的说明放在 docs/ 与 /arch。
  */
 export default async function HomePage() {
   const stats = await getKbStats();
@@ -30,17 +32,14 @@ export default async function HomePage() {
     {
       title: '药越吃越多，没人统账',
       desc: '一位 78 岁老人平均同时服用 6–8 种药，处方药、子女买的保健品、邻居给的「偏方」混在一个塑料袋里。',
-      tone: 'danger' as const,
     },
     {
       title: '风险藏在组合里，不藏在说明书里',
       desc: '华法林 + 阿司匹林 + 布洛芬，三种「常用药」叠在一起，消化道出血风险升高 2–3 倍——但每一种单独看都很安全。',
-      tone: 'warn' as const,
     },
     {
       title: '基层没有临床药师',
       desc: '村卫生室通常只有 1–2 名村医，既要看病又要随访；县级医院药师难以覆盖到村，用药重整几乎空白。',
-      tone: 'neutral' as const,
     },
   ];
 
@@ -67,21 +66,12 @@ export default async function HomePage() {
     },
   ];
 
-  const scores = [
-    ['AI 技术深度 35%', 'LLM 双引擎 + 7 步 Agent 工作流 + 混合 RAG + 多模态 + MCP + 安全守门', 'brand'],
-    ['创新性 25%', '冲突图谱可视化 + 可回溯决策轨迹 + 适老化语音/大字交互', 'brand'],
-    ['前端工程质量 10%', 'Next.js 15 App Router + TS strict + Zustand + 自研 SSE 协议 + 零图表库 SVG', 'ok'],
-    ['实用性 10%', '面向村医/家属的真实工作流，输出可直接执行的用药清单与转诊单', 'ok'],
-    ['用户体验 10%', '三栏并行、流式渲染、思考状态可视化、错误边界与降级路径', 'ok'],
-    ['社会价值 10%', '基层用药安全 → 减少可预防的出血/低血糖/跌倒事件', 'ok'],
-  ] as const;
-
   return (
     <div className="space-y-14 pb-6">
       {/* ================= Hero：文书头，不是营销大屏 ================= */}
       <section className="border-b border-line pb-9">
         <p className="font-mono text-[10.5px] leading-5 text-ink-mute">
-          AI Native 用药安全 Agent · Next.js 15 · TypeScript · RAG · MCP · 离线可运行
+          面向村卫生室与家属的用药安全助手 · 演示数据，非临床依据
         </p>
 
         <h1 className="mt-4 max-w-3xl text-[2rem] font-semibold leading-[1.15] tracking-tight text-ink md:text-[2.6rem]">
@@ -138,8 +128,7 @@ export default async function HomePage() {
         <div className="grid gap-3 md:grid-cols-3">
           {pains.map((p) => (
             <article key={p.title} className="card p-4">
-              <Badge tone={p.tone}>真实场景</Badge>
-              <h3 className="mt-2 text-sm font-semibold text-ink">{p.title}</h3>
+              <h3 className="text-sm font-semibold text-ink">{p.title}</h3>
               <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">{p.desc}</p>
             </article>
           ))}
@@ -168,7 +157,7 @@ export default async function HomePage() {
       {/* ================= 交互范式 ================= */}
       <section className="grid gap-3 lg:grid-cols-[1.15fr_1fr]">
         <div className="card p-5">
-          <Badge tone="brand">交互创新</Badge>
+          <Badge tone="brand">可解释性</Badge>
           <h2 className="mt-2 text-lg font-semibold tracking-tight text-ink">
             三栏并行：把 AI 的「思考」变成可观察对象
           </h2>
@@ -224,33 +213,54 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ================= 评分点自检 ================= */}
+      {/* ================= 适用边界 ================= */}
       <section className="space-y-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight text-ink">对照评审维度逐项落地</h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            不是「做完再找亮点」，而是从评分表倒推功能——每一项都有对应的可演示入口。
-          </p>
-        </div>
-        <div className="overflow-hidden rounded-lg border border-line">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-surface-sunken text-[10.5px] text-ink-mute">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">评审维度</th>
-                <th className="px-4 py-2.5 font-medium">本作品的落点</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line bg-surface-raised">
-              {scores.map(([dim, impl, tone]) => (
-                <tr key={dim} className="align-top">
-                  <td className="whitespace-nowrap px-4 py-2.5">
-                    <Badge tone={tone}>{dim}</Badge>
-                  </td>
-                  <td className="px-4 py-2.5 leading-relaxed text-ink-soft">{impl}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <h2 className="text-xl font-semibold tracking-tight text-ink">它能做什么，不能做什么</h2>
+        <div className="grid gap-px border border-line bg-line md:grid-cols-3">
+          {[
+            {
+              head: '适合这些情况',
+              tone: 'text-ink',
+              items: [
+                '手里有多种药，想知道一起吃有没有冲突',
+                '最近出现黑便、头晕、乏力、心慌，怀疑和吃药有关',
+                '刚出院或刚换了药，需要一份能照着做的用药清单',
+                '要给家属交代清楚：吃哪些、停哪些、什么时候复查',
+              ],
+            },
+            {
+              head: '出现这些请立刻就医',
+              tone: 'text-danger',
+              items: [
+                '胸痛、胸闷、冷汗，或一侧手脚无力、说话不清',
+                '呕血、黑便、便血，或不明原因的大片淤青',
+                '意识模糊、叫不醒、抽搐',
+                '严重过敏：面唇肿胀、呼吸困难',
+              ],
+            },
+            {
+              head: '它不做的事',
+              tone: 'text-ink',
+              items: [
+                '不诊断疾病，不给处方，不调整剂量的具体数值',
+                '不替代医生查体和化验，结论都以检验值为前提',
+                '不确定时明确说「不确定」，并建议找谁进一步确认',
+                '所有输出都是演示数据，不构成临床依据',
+              ],
+            },
+          ].map((col) => (
+            <div key={col.head} className="bg-surface px-4 py-4">
+              <h3 className={`text-[12px] font-semibold ${col.tone}`}>{col.head}</h3>
+              <ul className="mt-2 space-y-1.5">
+                {col.items.map((t) => (
+                  <li key={t} className="flex gap-1.5 text-[11.5px] leading-relaxed text-ink-soft">
+                    <span className="mt-[7px] h-px w-2 shrink-0 bg-ink-mute" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </section>
 
