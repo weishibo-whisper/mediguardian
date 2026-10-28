@@ -3,11 +3,12 @@ import type {
   KbHit,
   Patient,
   PlanStep,
+  SafetyLevel,
   SafetyReport,
   SseEvent,
   ToolCallRecord,
 } from '@/lib/types';
-import { getPatient, getPatientMedViews, type PatientMedView } from '@/lib/data';
+import { getDrugs, getPatient, getPatientMedViews, type PatientMedView } from '@/lib/data';
 import { searchKb, verifyCitations } from '@/lib/rag';
 import {
   TOOLS,
@@ -406,8 +407,7 @@ function composeMockAnswer(input: ComposeInput): string {
   return lines.join('\n');
 }
 
-/** 把文本切成小片，模拟流式输出（规则引擎没有 token 概念，按标点切片更自然） */
-function chunkText(text: string, size = 18): string[] {
+/** 把文本切成小片，模拟流式输出（规则引擎没有 token 概念，按标点切片更自然） */function chunkText(text: string, size = 18): string[] {
   const pieces: string[] = [];
   for (let i = 0; i < text.length; i += size) pieces.push(text.slice(i, i + size));
   return pieces;
@@ -416,6 +416,27 @@ function chunkText(text: string, size = 18): string[] {
 /* ==================================================================
  * 主流程
  * ================================================================== */
+
+/**
+ * 规则引擎的检索式构造：以「用户原话 + 主诉」为主体，药名只作弱提示。
+ *
+ * 早期版本把「问题 + 主诉 + 全部药名 + 全部诊断」拼成一个超长 query，
+ * 结果 p-001 问「牙龈出血、大便发黑」时，糖尿病文档因为命中更多高频词而霸榜，
+ * 真正需要的抗凝出血文档被挤到后面——**问题被上下文稀释了**。
+ * 现在的策略：药名只补问题里没提到的、且最多 3 个；缺失的证据交给「证据锚定」
+ * 按风险发现定向补齐，那里是精确的 docId 限定检索，不需要靠模糊匹配撞运气。
+ */
+function buildRetrievalQuery(
+  question: string,
+  chiefComplaint: string,
+  drugs: Array<{ name: string; keys: string[] }>,
+): string {
+  const mentioned = drugs.some((d) => d.keys.some((key) => key && question.includes(key)));
+  // 问题里已经点了药名（含商品名/俗名），就不要再往里塞别的药——否则检索会跑偏到无关药物的文档上。
+  const extraDrugs = mentioned ? '' : drugs.slice(0, 3).map((d) => d.name).join(' ');
+  return [question, chiefComplaint, extraDrugs].filter(Boolean).join(' ');
+}
+
 
 export async function runAgent(params: RunParams): Promise<AgentRun> {
   const { patientId, question, emit } = params;
@@ -482,16 +503,23 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
 
   const state: ExecState = { evidence: [], results: {}, toolCalls: [], retrievals: [] };
 
+  // 预取药品库，用于判断「用户问题里是否已经点了药名（含商品名/俗名）」
+  const drugCatalog = await getDrugs();
+  const retrievalDrugs = medViews.map((m) => ({
+    name: m.name,
+    keys: [m.name, ...(drugCatalog.find((d) => d.id === m.drugId)?.aliases ?? [])],
+  }));
+
   /* ---------- 3. 逐步执行 ---------- */
   for (const step of steps) {
     if (state.toolCalls.length >= MAX_STEPS + 2) break;
     const patched = { ...step };
     if (patched.tool === 'search_kb') {
-      // 规则引擎检索式：主诉 + 药名 + 用户问题，兼顾症状词与药品术语
-      patched.detail = `检索式：${patient.chiefComplaint.slice(0, 30)}… + ${medViews.map((m) => m.name).join('、')}`;
+      // 规则引擎检索式：用户原话 + 主诉（+ 少量未提到的药名），详见 buildRetrievalQuery
+      patched.detail = `检索式：${buildRetrievalQuery(safety.sanitizedText, patient.chiefComplaint, retrievalDrugs).slice(0, 40)}…`;
     }
     await execStep(patched, ctx as ToolContext & { question: string }, state, emit, patched.tool === 'search_kb'
-      ? { query: `${safety.sanitizedText} ${patient.chiefComplaint} ${medViews.map((m) => m.name).join(' ')} ${patient.conditions.join(' ')}`, topK: 6 }
+      ? { query: buildRetrievalQuery(safety.sanitizedText, patient.chiefComplaint, retrievalDrugs), topK: 8 }
       : patched.tool === 'make_referral'
         ? { reason: safety.flags.find((f) => f.category === 'redflag')?.title ?? '用药相关高风险需上级医院评估', urgency: safety.forceReferral ? 'emergency' : 'urgent' }
         : undefined);
@@ -600,6 +628,15 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
 
   const citationCheck = verifyCitations(answer, state.evidence);
 
+  /**
+   * 安全等级取「输入闸门」与「输出闸门」中更严重的一档。
+   * 只取输出侧会丢掉输入侧的性质：命中「可疑上消化道出血」的运行，
+   * 输出可能只是被追加了一句提示（notice），审计里却会记成 ok——
+   * 那么「强制转诊率」这类质量指标就永远是假的。
+   */
+  const LEVEL_RANK: Record<SafetyLevel, number> = { ok: 0, notice: 1, block: 2 };
+  const finalLevel: SafetyLevel = LEVEL_RANK[guarded.level] >= LEVEL_RANK[safety.level] ? guarded.level : safety.level;
+
   /* ---------- 7. 置信度 ---------- */
   const avgTop = state.evidence.slice(0, 3).reduce((s, h) => s + h.score, 0) / Math.max(1, Math.min(3, state.evidence.length));
   const coverage = Math.min(1, citationCheck.validIds.length / Math.max(1, findings.filter((f) => f.level !== 'info').length));
@@ -631,7 +668,7 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
     retrievals: state.retrievals,
     citations: citationCheck.validIds,
     safety: {
-      level: guarded.level,
+      level: finalLevel,
       flags: [...safety.flags, ...guarded.flags],
       forceReferral: safety.forceReferral,
       requireDisclaimer: true,

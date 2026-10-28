@@ -49,29 +49,28 @@ Route (app)                              Size  First Load JS
 
 ## 3. 端到端冒烟（`npm run smoke`）
 
-三个用例全部通过（无 API Key，走本地规则引擎）：
+**对生产构建（`npm run build && npm start`）实测**，三个用例全部通过（无 API Key，走本地规则引擎）：
 
 ```
 ▸ 红旗症状 + 抗凝出血（p-001 王秀兰）
   ✓ 规划步数 ≥ 5 — 7 步
   ✓ 工具调用 ≥ 4 — get_patient → check_interaction → lab_assess → search_kb → build_med_plan → make_referral
-  ✓ 事件序列完整 — run_start×1 safety×1 plan×1 note×2 step×14 tool_call×6 tool_result×6 retrieval×2 token×108 answer_meta×1 done×1
-  ✓ 产出引用 — 9 条
+  ✓ 事件序列完整 — run_start×1 safety×1 plan×1 note×2 step×14 tool_call×6 tool_result×6 retrieval×2 token×111 answer_meta×1 done×1
+  ✓ 产出引用 — 11 条
+  ✓ 回答包含「一句话结论」「风险清单」「什么时候必须就医」
   ✓ 红旗症状强制转诊 — true
-  ✓ 耗时 — 1079ms · 置信度 0.92 · 回答 1931 字
+  ✓ 耗时 — 1940ms · 置信度 0.92 · 回答 1998 字
 
 ▸ 三联打击 + 高钾（p-002 李国强）
-  ✓ 7 步 / 6 工具 / 引用 8 条 / 无红旗
-  ✓ 耗时 — 1244ms · 置信度 0.93
+  ✓ 7 步 / 6 工具 / 引用 10 条 / 无红旗 / 1569ms · 置信度 0.91
 
 ▸ Beers 多重镇静药（p-003 张桂英）
-  ✓ 7 步 / 引用 7 条 / 识别「苯二氮䓬」「跌倒」
-  ✓ 耗时 — 1017ms · 置信度 0.90
+  ✓ 7 步 / 引用 9 条 / 识别「苯二氮䓬」「跌倒」/ 1129ms · 置信度 0.87
 
 ✓ 全部用例通过
 ```
 
-关键观察：**单次完整运行 1–2 秒**，其中 7 步规划、6 次工具调用、2 轮检索（含定向取证）全部真实执行。
+关键观察：**单次完整运行 1.1–2.0 秒**，其中 7 步规划、6 次工具调用、2 轮检索（含定向取证）全部真实执行。
 
 ---
 
@@ -115,19 +114,48 @@ Route (app)                              Size  First Load JS
 ## 6. 审计与回放（`npm run audit:report`）
 
 ```
-运行次数 3 · 平均置信度 0.91 · 平均耗时 1561ms
-安全等级： { ok: 3 }
-工具 Top： get_patient×3, check_interaction×3, lab_assess×3, search_kb×3, build_med_plan×3, notify_family×2, make_referral×1
+运行次数 15 · 平均置信度 0.91 · 平均耗时 1485ms
+安全等级： { ok: 10, block: 3, notice: 2 }
+工具 Top： get_patient×15, check_interaction×15, lab_assess×15, search_kb×15, build_med_plan×15, notify_family×8, make_referral×7
 已生成 docs/audit-summary.md
 ```
 
-结论：`logs/audit.jsonl` 与 `logs/runs/*.json` 双写正常，`/safety` 页面可列出条目并跳转 `/trace/{runId}` 回放。
+结论：`logs/audit.jsonl` 与 `logs/runs/*.json` 双写正常；命中红旗的 3 次运行被正确记为 `block`（修复前会被误记成 `ok`，见第 8 节），`/safety` 页面可列出条目并跳转 `/trace/{runId}` 回放。
 
 ---
 
-## 7. 已知限制（诚实记录）
+## 7. 答辩前自查发现并修复的两个真实缺陷
 
-1. `next build` 与 `next dev` **不能共享同一个 `.next` 目录**；切换前请清理 `.next`（或在两个端口/工作副本中分别运行），否则可能出现 manifest 缺失的偶发报错。
-2. 首次 `npm run dev` 的编译耗时约 15–20 秒（Next 15 Turbopack-less 冷启动），之后为热更新。
-3. 未配置视觉模型时，`/api/vision` 返回演示识别结果，并在 UI 上标注「演示模式」。
-4. 本项目未接入数据库；`logs/` 在只读部署（如 Serverless）下静默降级为内存轨迹（已在代码中 try/catch 处理）。
+这两个问题是**评委最容易现场抓到的地方**，都在验证阶段被自查出来并已修复：
+
+### 7.1 审计安全等级丢档（已修）
+
+- 现象：命中「可疑上消化道出血」的运行，`logs/audit.jsonl` 里 `safetyLevel` 仍是 `ok`，`/safety` 页面的「触发强转诊」统计偏低。
+- 根因：`lib/agent/runtime.ts` 落盘时用了 `guarded.level`（输出闸门），把输入闸门已经判定的 `block` 覆盖掉了。
+- 修复：改为 `finalLevel = max(输入等级, 输出等级)`（`ok < notice < block`）。
+- 验证：修复后审计汇总变为 `{ ok: 10, block: 3, notice: 2 }`，p-001 的出血提问稳定记为 `block`。
+
+### 7.2 检索式被上下文稀释（已修）
+
+- 现象：p-001 问「牙龈出血、大便发黑」，检索结果前三条却全是《基层 2 型糖尿病用药》——问题被「全部药名 + 全部诊断」拼成的长 query 淹没了。
+- 根因：`search_kb` 的 query 把 `问题 + 主诉 + 全部药名 + 全部诊断` 一次性拼在一起。
+- 修复：`buildRetrievalQuery()` —— 以「用户原话 + 主诉」为主体；只有当问题里**没有**提到任何药名（含商品名/俗名）时才补最多 3 个药名；缺失证据交给证据锚定按 docId 定向补齐。
+- 验证（同一问题修复前后对比）：
+
+| 排名 | 修复前 | 修复后 |
+| --- | --- | --- |
+| 1 | kb-diabetes-basics（糖尿病） | **kb-antiplatelet（抗血小板联用边界）** |
+| 2 | kb-diabetes-basics（糖尿病） | **kb-nsaid-anticoag（抗凝 + NSAID）** |
+| 3 | kb-diabetes-basics（糖尿病） | **kb-anticoag-bleeding（抗凝出血监测）** |
+
+同时把 `topK` 从 6 提到 8，引用数由 9 条增加到 11 条，证据面板与正文角标的对应关系更完整。
+
+---
+
+## 8. 已知限制（诚实记录）
+
+1. `next build` 在本机偶发失败（`Invariant: no direct app page entry found for /_not-found`、`.nft.json` ENOENT），间隔重试即可通过；根因指向上层目录存在多余 `package-lock.json` 与杀软对 `.next` 的实时扫描，已通过 `outputFileTracingRoot` 固定工作区根目录缓解，正式构建前建议清理 `.next`。
+2. `next build` 与 `next dev` 共用 `.next` 时可能互相污染；切换前清理 `.next` 最稳。
+3. 首次 `npm run dev` 冷启动编译约 15–20 秒，之后热更新。
+4. 未配置视觉模型时，`/api/vision` 返回演示识别结果，并在 UI 上标注「演示模式」。
+5. 未接入数据库；`logs/` 在只读部署（如 Serverless）下静默降级为内存轨迹（代码已 try/catch）。

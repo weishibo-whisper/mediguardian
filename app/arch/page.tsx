@@ -162,7 +162,7 @@ export default async function ArchPage() {
           <pre className="overflow-x-auto rounded-xl bg-surface-sunken p-3 font-mono text-[10px] leading-relaxed text-ink-soft">
 {`data/
 ├─ kb/*.md              # 17 篇循证知识（frontmatter + 小节分块）
-├─ drugs.json           # 28 种基层常用药：别名/常规剂量/肾损/老年注意/监测项
+├─ drugs.json           # 29 种基层常用药：别名/常规剂量/肾损/老年注意/监测项
 ├─ interactions.json    # 21 条相互作用规则（机制 + 处置 + 证据 docId）
 ├─ redflags.json        # 11 条红旗症状（分诊等级 + 去向）
 └─ patients.json        # 4 位演示患者（含自购药、检验异常、家属联系人）`}

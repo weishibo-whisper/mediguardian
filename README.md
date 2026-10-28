@@ -109,13 +109,15 @@
     │               │
 ┌───▼───────────────▼──────────────────────────────────────────────────────────────────┐
 │ 数据层（随仓库分发，无数据库）                                                          │
-│ data/kb/*.md（17 篇）· drugs.json（28 种）· interactions.json（21 条）· redflags.json（11 条）· patients.json（4 位） │
+│ data/kb/*.md（17 篇）· drugs.json（29 种）· interactions.json（21 条）· redflags.json（11 条）· patients.json（4 位） │
 └──────────────────────────────────────────────────────────────────────────────────────┘
                                         ▲
                               mcp/server.mjs（MCP stdio）→ /api/mcp
 ```
 
 ### 目录结构
+
+> 文中所有数量（药品种类、知识库篇数、规则条数）均以 `data/` 下的数据文件为准，改动数据后请同步更新文档。
 
 ```
 chuanzhi/
@@ -205,10 +207,15 @@ npm run build        # 生产构建
 npm start            # 生产启动
 npm run typecheck    # TypeScript 严格检查（tsc --noEmit）
 npm run lint         # ESLint（next/core-web-vitals）
-npm run eval:rag     # 检索质量评测（需先 npm run dev）
-npm run mcp          # 启动 MCP Server（需先 npm run dev）
+npm run smoke        # 端到端冒烟：3 个患者用例，校验 SSE 事件序列/引用/红旗转诊（需先启动服务）
+npm run eval:rag     # 检索质量评测：14 条探针的 Hit@1 / Hit@3 / MRR（需先启动服务）
+npm run mcp          # 启动 MCP Server（stdio，需先启动服务）
 npm run audit:report # 汇总审计日志 → docs/audit-summary.md
 ```
+
+> 提示：`eval:rag` / `smoke` 走的是真实 HTTP 接口，建议先访问一次 `/arch` 让检索路由完成编译
+> （`next dev` 首次编译约 15–20 秒），再执行命令，避免把冷启动误当成失败。
+> 若 `next build` 与 `next dev` 交替使用，切换前清理 `.next` 目录最稳。
 
 ### 环境变量说明
 
