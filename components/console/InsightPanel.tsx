@@ -70,7 +70,7 @@ export function InsightPanel({ bundle }: { bundle: PatientBundle }) {
               <Icon size={12} />
               {tab.label}
               {tab.count > 0 ? (
-                <span className={cn('rounded-full px-1 font-mono text-[9px]', active ? 'bg-brand-100' : 'bg-surface-sunken')}>
+                <span className={cn('tnum rounded border px-1 font-mono text-[9px]', active ? 'border-accent-solid bg-surface text-accent-text' : 'border-line bg-surface-sunken text-ink-mute')}>
                   {tab.count}
                 </span>
               ) : null}
@@ -315,7 +315,7 @@ function EvidenceView({
             onClick={() => onSelect(selected ? null : hit.chunkId)}
             className={cn(
               'w-full rounded-xl border px-2.5 py-2 text-left transition',
-              selected ? 'border-brand-500 bg-brand-50/60 shadow-soft' : 'border-line bg-surface hover:border-brand-200',
+              selected ? 'border-accent-solid bg-surface' : 'border-line bg-surface hover:border-ink-mute',
             )}
           >
             <div className="flex items-center gap-1.5">

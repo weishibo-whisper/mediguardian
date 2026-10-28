@@ -36,13 +36,13 @@ export function PatientRail({ bundles, activeId }: { bundles: PatientBundle[]; a
                   onClick={() => selectPatient(b.patient.id)}
                   className={cn(
                     'flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left transition',
-                    isActive ? 'bg-brand-50 ring-1 ring-brand-200' : 'hover:bg-surface-sunken',
+                    isActive ? 'border-l-2 border-accent-solid bg-surface pl-[10px]' : 'border-l-2 border-transparent hover:bg-surface-sunken',
                   )}
                 >
                   <span
                     className={cn(
-                      'grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-semibold',
-                      isActive ? 'bg-accent-solid text-white' : 'bg-surface-sunken text-ink-soft',
+                      'grid h-8 w-8 shrink-0 place-items-center rounded border font-mono text-[12px] font-semibold',
+                      isActive ? 'border-accent-solid bg-surface text-accent-text' : 'border-line bg-surface-sunken text-ink-soft',
                     )}
                   >
                     {b.patient.name.slice(0, 1)}

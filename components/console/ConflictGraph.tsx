@@ -58,7 +58,7 @@ export function ConflictGraph({ bundle }: { bundle: PatientBundle }) {
       <div className="relative rounded-xl border border-line bg-surface p-1">
         <svg viewBox={`0 0 ${size} ${size}`} className="h-auto w-full" role="img" aria-label="用药冲突关系图">
           <defs>
-            <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
+            <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%" stop-opacity="0">
               <stop offset="0%" stopColor="rgb(var(--brand-100))" stopOpacity="0.9" />
               <stop offset="100%" stopColor="rgb(var(--brand-100))" stopOpacity="0" />
             </radialGradient>

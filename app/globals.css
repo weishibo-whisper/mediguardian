@@ -3,64 +3,76 @@
 @tailwind utilities;
 
 /* ==================================================================
- * 设计令牌（Design Tokens）
- * 医疗场景的视觉基调：青绿=专业可信，暖橙=提醒，留白=降低认知负荷
- * 适老化：支持 18.5px 基准字号、整站 rem 缩放、正文对比度按 WCAG AA 实测校准
+ * 设计令牌（Design Tokens）· 方向：「病历纸」
+ *
+ * 为什么换掉上一版：上一版是典型的"AI 生成感"——青绿渐变辉光、圆角 16–24px、
+ * 每块都带柔和投影、毛玻璃导航、卡片悬停上浮、浅色胶囊标签。这些元素单独看都
+ * 不难看，凑在一起就是"没人做过取舍"的信号。
+ *
+ * 这一版按一份医疗文书来定规则：
+ *   1) 纸是暖白，不是冷白；墨是近黑，不是纯黑。医疗记录纸就是这个色温。
+ *   2) 只用 1px 细线划分层级，不用投影堆层次。投影用来表达"浮起来"，
+ *      而这个界面里没有任何东西真的浮在别的东西上面。
+ *   3) 圆角收到 6–8px。大圆角让界面显得软、显得像模板；文书是方的。
+ *   4) 青绿只留给「可点击的主操作」和「当前所在位置」，其余一律用墨色。
+ *      一个颜色只能有一个含义。
+ *   5) 数字与编号用等宽 + tabular-nums。剂量、INR、毫秒数要能对齐着读。
  *
  * 对比度口径：所有文字与其真实渲染背景的比值均用 scripts/ui-review.mjs
- * 逐元素实测（含半透明叠加），而不是拿页面底色估算。当前最差组合为
- * ink-mute on surface-sunken = 4.70:1（要求 4.5:1）。
- * 早前版本 ink-mute 为 #6b8580，实测仅 3.63–3.97:1，属于不合格。
+ * 逐元素实测（含半透明叠加的 alpha 合成）。本版最差组合 4.59:1，要求 4.5:1。
  * ================================================================== */
 :root {
-  --brand-50: 240 253 250;
-  --brand-100: 204 251 241;
-  --brand-200: 153 246 228;
-  --brand-500: 20 184 166;
-  --brand-600: 13 148 136;
-  --brand-700: 15 118 110;
+  --brand-50: 236 246 243;
+  --brand-100: 214 238 233;
+  --brand-200: 168 216 208;
+  --brand-500: 26 138 127;
+  --brand-600: 12 110 101;
+  --brand-700: 9 92 85;
 
   /* 按角色的强调色：见 tailwind.config.ts 中 accent 的注释 */
-  --accent-solid: 12 133 122; /* 白字实测 4.51:1 */
-  --accent-solid-hover: 15 118 110; /* 白字实测 5.47:1 */
-  --accent-text: 15 118 110; /* 白底 5.47:1 / 浮起面 5.18:1 */
+  --accent-solid: 12 110 101; /* 白字实测 6.12:1 */
+  --accent-solid-hover: 9 92 85; /* 白字实测 7.85:1 */
+  --accent-text: 12 110 101; /* 纸底 5.86:1 / 浮起面 6.12:1 */
 
-  --ink: 11 31 28;
-  --ink-soft: 52 82 76;
-  --ink-mute: 92 114 110;
+  --ink: 24 27 26;
+  --ink-soft: 66 73 71;
+  --ink-mute: 96 102 100;
 
-  --surface: 250 253 252;
+  --surface: 251 250 246; /* 暖白纸 */
   --surface-raised: 255 255 255;
-  --surface-sunken: 241 246 244;
-  --line: 219 231 227;
+  --surface-sunken: 243 241 236;
+  --line: 226 222 214;
 
   --danger: 197 45 45;
   --warn: 157 81 6;
   --ok: 15 124 91;
 
-  --radius: 14px;
+  --radius: 6px;
+
+  /* 强 ease-out：UI 动效统一用它，内建 ease-out 太软 */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 [data-theme='dark'] {
-  --brand-50: 8 34 30;
-  --brand-100: 11 56 49;
-  --brand-200: 15 82 72;
+  --brand-50: 15 39 36;
+  --brand-100: 18 54 50;
+  --brand-200: 26 78 72;
   --brand-500: 45 212 191;
-  --brand-600: 20 184 166;
-  --brand-700: 13 148 136;
+  --brand-600: 12 110 101;
+  --brand-700: 13 122 111;
 
-  --accent-solid: 15 118 110; /* 白字实测 5.47:1（原 #14b8a6 仅 2.49:1） */
-  --accent-solid-hover: 11 107 97;
-  --accent-text: 45 212 191; /* 深色底 10.08:1 */
+  --accent-solid: 12 110 101; /* 白字 6.12:1；原 #14b8a6 仅 2.49:1 */
+  --accent-solid-hover: 10 95 88;
+  --accent-text: 94 214 199; /* 深色底 10.58:1 */
 
-  --ink: 232 242 239;
-  --ink-soft: 176 200 194;
-  --ink-mute: 130 158 152;
+  --ink: 234 232 226;
+  --ink-soft: 172 178 174;
+  --ink-mute: 140 146 143;
 
-  --surface: 8 20 18;
-  --surface-raised: 14 30 27;
-  --surface-sunken: 6 15 13;
-  --line: 32 56 51;
+  --surface: 17 19 19;
+  --surface-raised: 24 27 26;
+  --surface-sunken: 11 13 13;
+  --line: 45 50 48;
 
   --danger: 248 113 113;
   --warn: 251 191 36;
@@ -90,11 +102,16 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* 焦点可见性（无障碍：键盘用户必须能看到当前位置） */
+::selection {
+  background: rgb(var(--brand-200));
+  color: rgb(var(--ink));
+}
+
+/* 焦点可见性：用墨色描边而不是品牌色——纸面上墨色永远是最清楚的指示 */
 :focus-visible {
-  outline: 2px solid rgb(var(--brand-600));
+  outline: 2px solid rgb(var(--ink));
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 /* 自定义滚动条：细、低对比，避免抢注意力 */
@@ -119,13 +136,14 @@ body {
 @layer components {
   .card {
     /* min-w-0：grid/flex 子项默认 min-width:auto，会被内部 <pre>/<table> 的
-       固有宽度撑破，导致 320px 下整页横向滚动。卡片一律允许收缩。 */
-    @apply min-w-0 rounded-2xl border border-line bg-surface-raised shadow-soft;
+       固有宽度撑破，导致 320px 下整页横向滚动。卡片一律允许收缩。
+       不加投影：层级由 1px 细线与留白表达。 */
+    @apply min-w-0 rounded-lg border border-line bg-surface-raised;
   }
 
   .btn {
-    @apply inline-flex select-none items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition
-      duration-150 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex select-none items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium
+      transition-colors duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45;
   }
 
   .btn-primary {
@@ -133,22 +151,27 @@ body {
   }
 
   .btn-ghost {
-    @apply btn border border-line bg-surface-raised text-ink-soft hover:border-brand-200 hover:text-ink;
+    @apply btn border border-line bg-surface-raised text-ink-soft hover:border-ink-mute hover:text-ink;
   }
 
+  /* 标签：4px 圆角，不做胶囊。胶囊+大圆角是"模板感"的主要来源之一。
+     min-h-6：WCAG 2.5.8 要求指针目标 ≥24px，标签本身也是可点按钮。 */
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium leading-5;
+    @apply inline-flex min-h-6 items-center gap-1 rounded border border-line px-1.5 text-[10.5px] font-medium leading-4;
   }
 
   .kbd {
     @apply rounded border border-line bg-surface-sunken px-1.5 py-0.5 font-mono text-[10px] text-ink-mute;
   }
 
-  /* 网底纹理：给大面积留白一点质感，不干扰阅读 */
-  .grid-bg {
-    background-image:
-      radial-gradient(circle at 1px 1px, rgb(var(--line)) 1px, transparent 0);
-    background-size: 22px 22px;
+  /* 细线分隔：文书靠横线划分区块，而不是靠卡片堆叠 */
+  .hairline {
+    @apply border-t border-line;
+  }
+
+  /* 等宽数字：剂量 / INR / 毫秒 / 置信度必须能竖向对齐 */
+  .tnum {
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -156,10 +179,10 @@ body {
  * AI 回答的 Markdown 渲染样式（自研轻量渲染器配套）
  * ================================================================== */
 .md {
-  @apply text-[0.95rem] leading-[1.85] text-ink;
+  @apply text-[0.9rem] leading-[1.75] text-ink;
 }
 .md h3 {
-  @apply mb-1.5 mt-4 first:mt-0 text-[0.95rem] font-semibold tracking-tight text-accent-text;
+  @apply mb-1 mt-4 border-l-2 border-accent-solid pl-2 text-[0.88rem] font-semibold text-ink first:mt-0;
 }
 .md p {
   @apply my-1.5;
@@ -181,16 +204,16 @@ body {
   @apply font-semibold text-ink;
 }
 .md blockquote {
-  @apply my-3 rounded-lg border-l-2 border-brand-500 bg-brand-50/60 px-3 py-2 text-[0.8rem] leading-relaxed text-ink-soft;
+  @apply my-3 border-l-2 border-line pl-2.5 text-[0.78rem] leading-relaxed text-ink-soft;
 }
 .md code {
   @apply rounded bg-surface-sunken px-1 py-0.5 font-mono text-[0.8em];
 }
 
-/* 流式输出光标的呼吸感 */
+/* 流式输出光标 */
 .streaming-caret::after {
   content: '▍';
-  @apply ml-0.5 inline-block text-brand-500;
+  @apply ml-0.5 inline-block text-ink-mute;
   animation: caret 1s step-end infinite;
 }
 

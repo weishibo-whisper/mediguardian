@@ -78,58 +78,49 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-14 pb-6">
-      {/* ================= Hero ================= */}
-      <section className="relative overflow-hidden rounded-3xl border border-line bg-surface-raised px-6 py-10 shadow-soft md:px-10 md:py-14">
-        <div className="grid-bg pointer-events-none absolute inset-0 opacity-40" />
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-200/30 blur-3xl" />
-        <div className="relative max-w-3xl">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge tone="brand">
-              <Sparkles size={11} /> AI Native 用药安全 Agent
-            </Badge>
-            <Badge>Next.js 15 · TypeScript · RAG · MCP</Badge>
-            <Badge tone="ok">离线可运行</Badge>
-          </div>
+      {/* ================= Hero：文书头，不是营销大屏 ================= */}
+      <section className="border-b border-line pb-9">
+        <p className="font-mono text-[10.5px] leading-5 text-ink-mute">
+          AI Native 用药安全 Agent · Next.js 15 · TypeScript · RAG · MCP · 离线可运行
+        </p>
 
-          <h1 className="mt-5 text-3xl font-semibold leading-[1.15] tracking-tight text-ink md:text-[2.6rem]">
-            让每一位老人
-            <br className="hidden md:block" />
-            <span className="text-accent-text">都能用对药</span>
-          </h1>
+        <h1 className="mt-4 max-w-3xl text-[2rem] font-semibold leading-[1.15] tracking-tight text-ink md:text-[2.6rem]">
+          让每一位老人都能用对药
+        </h1>
 
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-ink-soft md:text-[0.95rem]">
-            守药人是一个面向基层医疗的 AI Native 用药安全 Agent。它把老人手里的一袋药变成结构化清单，
-            自主调用工具做相互作用核查、按肾功能与年龄分层、检索循证依据，
-            最后输出一份<strong className="font-medium text-ink">能直接执行</strong>的用药重整与随访方案——
-            并且每一步判断都摆在桌面上，可点开、可回溯、可审计。
-          </p>
+        <p className="mt-4 max-w-2xl text-[13.5px] leading-[1.75] text-ink-soft md:text-sm">
+          守药人是一个面向基层医疗的 AI Native 用药安全 Agent。它把老人手里的一袋药变成结构化清单，
+          自主调用工具做相互作用核查、按肾功能与年龄分层、检索循证依据，
+          最后输出一份<strong className="font-medium text-ink">能直接执行</strong>的用药重整与随访方案——
+          并且每一步判断都摆在桌面上，可点开、可回溯、可审计。
+        </p>
 
-          <div className="mt-7 flex flex-wrap items-center gap-2.5">
-            <Link href="/console" className="btn-primary !px-4 !py-2.5">
-              进入智能诊台 <ArrowRight size={15} />
-            </Link>
-            <Link href="/arch" className="btn-ghost !px-4 !py-2.5">
-              <GitBranch size={14} /> 看技术架构
-            </Link>
-            <span className="ml-1 text-[11px] text-ink-mute">
-              无需配置 API Key，内置规则引擎可完整演示
-            </span>
-          </div>
-
-          <dl className="mt-8 grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              ['知识库文档', `${stats.docCount} 篇`],
-              ['语义分块', `${stats.chunkCount} 块`],
-              ['Agent 工具', `${TOOL_NAMES.length} 个`],
-              ['演示患者', '4 位'],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-xl border border-line bg-surface px-3 py-2">
-                <dt className="text-[10px] uppercase tracking-wide text-ink-mute">{label}</dt>
-                <dd className="mt-0.5 font-mono text-sm font-semibold text-ink">{value}</dd>
-              </div>
-            ))}
-          </dl>
+        <div className="mt-6 flex flex-wrap items-center gap-2.5">
+          <Link href="/console" className="btn-primary !px-3.5 !py-2">
+            进入智能诊台 <ArrowRight size={14} />
+          </Link>
+          <Link href="/arch" className="btn-ghost !px-3.5 !py-2">
+            <GitBranch size={13} /> 看技术架构
+          </Link>
+          <span className="text-[11px] text-ink-mute">
+            无需配置 API Key，内置规则引擎可完整演示
+          </span>
         </div>
+
+        {/* 数字台账：1px 细线分栏，等宽数字，像一张表格的头 */}
+        <dl className="mt-9 grid grid-cols-2 gap-px border-y border-line bg-line sm:grid-cols-4">
+          {[
+            ['知识库文档', `${stats.docCount} 篇`],
+            ['语义分块', `${stats.chunkCount} 块`],
+            ['Agent 工具', `${TOOL_NAMES.length} 个`],
+            ['演示患者', '4 位'],
+          ].map(([label, value]) => (
+            <div key={label} className="bg-surface px-3 py-2.5">
+              <dt className="text-[10.5px] text-ink-mute">{label}</dt>
+              <dd className="tnum mt-0.5 font-mono text-[15px] font-semibold text-ink">{value}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       {/* ================= 痛点 ================= */}
@@ -162,8 +153,8 @@ export default async function HomePage() {
           {pillars.map((p) => {
             const Icon = p.icon;
             return (
-              <article key={p.title} className="card group p-4 transition hover:-translate-y-0.5 hover:shadow-lift">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-50 text-accent-text transition group-hover:bg-accent-solid group-hover:text-white">
+              <article key={p.title} className="card group p-4 transition-colors hover:border-ink-mute">
+                <span className="grid h-8 w-8 place-items-center rounded-md border border-line bg-surface text-ink-soft transition-colors group-hover:border-accent-solid group-hover:text-accent-solid">
                   <Icon size={17} />
                 </span>
                 <h3 className="mt-2.5 text-sm font-semibold text-ink">{p.title}</h3>
@@ -187,13 +178,13 @@ export default async function HomePage() {
           </p>
           <ul className="mt-3 space-y-2 text-xs leading-relaxed text-ink-soft">
             <li className="flex gap-2">
-              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+              <span className="mt-1.5 h-1 w-1 shrink-0 bg-ink-mute" />
               <span>
                 <strong className="font-medium text-ink">冲突图谱</strong>：N 种药排成环形，高风险组合画成流动红色虚线，点击即看机制——把抽象的「相互作用」变成一眼可见的结构。
               </span>
             </li>
             <li className="flex gap-2">
-              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+              <span className="mt-1.5 h-1 w-1 shrink-0 bg-ink-mute" />
               <span>
                 <strong className="font-medium text-ink">决策轨迹</strong>：规划 → 工具调用 → 检索 → 生成，每步带耗时与参数，可跳转
                 <code className="mx-1 rounded bg-surface-sunken px-1 font-mono text-[10px]">/trace/[runId]</code>
@@ -201,7 +192,7 @@ export default async function HomePage() {
               </span>
             </li>
             <li className="flex gap-2">
-              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+              <span className="mt-1.5 h-1 w-1 shrink-0 bg-ink-mute" />
               <span>
                 <strong className="font-medium text-ink">证据徽标</strong>：回答里的 [1][2] 可点击，直接跳到原文与四项打分明细，幻觉无处可藏。
               </span>
@@ -214,19 +205,19 @@ export default async function HomePage() {
           <h3 className="text-sm font-semibold text-ink">为「不会打字、看不清」的用户重做输入输出</h3>
           <div className="space-y-2 text-xs leading-relaxed text-ink-soft">
             <p className="flex items-start gap-2">
-              <Mic size={13} className="mt-0.5 shrink-0 text-brand-600" />
+              <Mic size={13} className="mt-0.5 shrink-0 text-ink-mute" />
               语音问药：Web Speech API 直接把老人说的话变成检索式，播报用 0.92 倍速的中文 TTS。
             </p>
             <p className="flex items-start gap-2">
-              <Camera size={13} className="mt-0.5 shrink-0 text-brand-600" />
+              <Camera size={13} className="mt-0.5 shrink-0 text-ink-mute" />
               药盒拍照：视觉模型识别后强制做「名称归一化」，把「拜阿司匹灵」映射回 drugId 才能参与风险计算。
             </p>
             <p className="flex items-start gap-2">
-              <Users size={13} className="mt-0.5 shrink-0 text-brand-600" />
+              <Users size={13} className="mt-0.5 shrink-0 text-ink-mute" />
               家属协同：一键生成可直接粘贴到微信的口语化通知，明确「停药 / 复查 / 何时打 120」。
             </p>
             <p className="flex items-start gap-2">
-              <Timer size={13} className="mt-0.5 shrink-0 text-brand-600" />
+              <Timer size={13} className="mt-0.5 shrink-0 text-ink-mute" />
               大字模式 + 深色主题：整站 rem 缩放与主题令牌，投影演示与背光诊室都能用。
             </p>
           </div>
@@ -241,9 +232,9 @@ export default async function HomePage() {
             不是「做完再找亮点」，而是从评分表倒推功能——每一项都有对应的可演示入口。
           </p>
         </div>
-        <div className="overflow-hidden rounded-2xl border border-line">
+        <div className="overflow-hidden rounded-lg border border-line">
           <table className="w-full text-left text-xs">
-            <thead className="bg-surface-sunken text-[11px] uppercase tracking-wide text-ink-mute">
+            <thead className="bg-surface-sunken text-[10.5px] text-ink-mute">
               <tr>
                 <th className="px-4 py-2.5 font-medium">评审维度</th>
                 <th className="px-4 py-2.5 font-medium">本作品的落点</th>
@@ -265,7 +256,7 @@ export default async function HomePage() {
 
       {/* ================= 技术底座 ================= */}
       <section className="card flex flex-col items-start gap-3 p-5 md:flex-row md:items-center">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-solid text-white">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-line bg-surface text-ink">
           <BrainCircuit size={19} />
         </span>
         <div className="flex-1">

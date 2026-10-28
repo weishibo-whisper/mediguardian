@@ -45,13 +45,18 @@ const config: Config = {
         ok: 'rgb(var(--ok) / <alpha-value>)',
       },
       borderRadius: {
-        xl: '0.875rem',
-        '2xl': '1.125rem',
-        '3xl': '1.5rem',
+        /* 压低圆角：16–24px 的大圆角是"模板感"的主要来源 */
+        DEFAULT: '4px',
+        md: '6px',
+        lg: '8px',
+        xl: '10px',
+        '2xl': '12px',
+        '3xl': '14px',
       },
       boxShadow: {
-        soft: '0 1px 2px rgb(9 30 27 / 0.04), 0 8px 24px -16px rgb(9 30 27 / 0.18)',
-        lift: '0 2px 4px rgb(9 30 27 / 0.05), 0 18px 40px -24px rgb(9 30 27 / 0.28)',
+        /* 只表达"浮起一像素"，不做辉光 */
+        soft: '0 1px 0 rgb(24 27 26 / 0.05)',
+        lift: '0 1px 3px rgb(24 27 26 / 0.08)',
       },
       fontFamily: {
         sans: [
@@ -85,8 +90,9 @@ const config: Config = {
         },
       },
       animation: {
-        'fade-up': 'fade-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both',
-        'fade-in': 'fade-in 240ms ease-out both',
+        /* 进场上限 140ms：新内容要"立刻在"，不是"演给你看" */
+        'fade-up': 'fade-up 140ms var(--ease-out) both',
+        'fade-in': 'fade-in 120ms ease-out both',
         caret: 'caret 1s step-end infinite',
         'trace-dash': 'trace-dash 1.2s linear infinite',
       },

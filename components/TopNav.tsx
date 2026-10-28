@@ -50,15 +50,15 @@ export function TopNav() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/80 bg-surface/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-line bg-surface">
       <div className="mx-auto flex h-14 w-full max-w-[1440px] items-center gap-3 px-4 md:px-6">
         <Link href="/" className="group flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-xl bg-accent-solid text-white shadow-soft transition group-hover:bg-accent-solid-hover">
+          <span className="grid h-7 w-7 place-items-center rounded-md bg-accent-solid text-white transition-colors group-hover:bg-accent-solid-hover">
             <ShieldCheck size={17} strokeWidth={2.2} />
           </span>
           <span className="flex flex-col leading-none">
             <span className="text-[0.95rem] font-semibold tracking-tight">守药人</span>
-            <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-mute">
+            <span className="mt-0.5 font-mono text-[9.5px] text-ink-mute">
               MediGuardian
             </span>
           </span>
@@ -72,10 +72,10 @@ export function TopNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'rounded-lg px-3 py-1.5 text-sm transition',
+                  'relative -mb-px border-b-2 px-3 py-2 text-[13px] transition-colors',
                   active
-                    ? 'bg-brand-50 font-medium text-accent-text'
-                    : 'text-ink-soft hover:bg-surface-sunken hover:text-ink',
+                    ? 'border-accent-solid font-medium text-ink'
+                    : 'border-transparent text-ink-soft hover:border-line hover:text-ink',
                 )}
               >
                 {item.label}
@@ -85,7 +85,7 @@ export function TopNav() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
-          <span className="hidden items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-medium text-accent-text sm:flex">
+          <span className="hidden items-center gap-1.5 text-[11px] text-ink-mute sm:flex">
             <Sparkles size={12} />
             Agent 在线
           </span>
@@ -94,7 +94,7 @@ export function TopNav() {
             onClick={toggleBig}
             aria-pressed={big}
             title="大字模式（适老化）"
-            className={cn('btn-ghost !px-2.5', big && 'border-brand-200 text-accent-text')}
+            className={cn('btn-ghost !px-2', big && 'border-ink-mute text-ink')}
           >
             <Type size={16} />
             <span className="hidden text-xs sm:inline">大字</span>
@@ -104,7 +104,7 @@ export function TopNav() {
             onClick={toggleDark}
             aria-pressed={dark}
             title="切换深浅主题"
-            className="btn-ghost !px-2.5"
+            className="btn-ghost !px-2"
           >
             {dark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
@@ -112,7 +112,7 @@ export function TopNav() {
       </div>
 
       {/* 移动端次级导航 */}
-      <nav className="flex items-center gap-1 overflow-x-auto border-t border-line/70 px-3 py-1.5 md:hidden" aria-label="移动导航">
+      <nav className="flex items-center gap-1 overflow-x-auto border-t border-line px-3 md:hidden" aria-label="移动导航">
         {NAV.map((item) => {
           const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
           return (
@@ -120,8 +120,8 @@ export function TopNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'whitespace-nowrap rounded-lg px-2.5 py-1 text-xs transition',
-                active ? 'bg-brand-50 font-medium text-accent-text' : 'text-ink-soft',
+                'whitespace-nowrap border-b-2 px-2.5 py-1.5 text-xs transition-colors',
+                active ? 'border-accent-solid font-medium text-ink' : 'border-transparent text-ink-soft',
               )}
             >
               {item.label}

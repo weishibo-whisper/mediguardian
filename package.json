@@ -27,6 +27,7 @@
     "smoke:mcp": "node scripts/mcp-smoke.mjs",
     "audit:ui": "node scripts/ui-audit.mjs",
     "audit:review": "node scripts/ui-review.mjs",
+    "audit:style": "node scripts/ui-style-check.mjs",
     "shots": "node scripts/screenshots.mjs",
     "mcp": "node mcp/server.mjs",
     "audit:report": "node scripts/audit-report.mjs"
