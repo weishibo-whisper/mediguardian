@@ -175,7 +175,7 @@ function assessLabs(ctx: ToolContext): ClinicalFinding[] {
     findings.push({
       id: 'f-bzd-stacking',
       level: 'high',
-      title: '两种苯二氮䓬类同时使用',
+      title: '两种苯二氮䓬类同时使用（跌倒与过度镇静风险）',
       detail: '艾司唑仑与地西泮叠加会显著延长镇静时间，夜间起夜跌倒与次日认知损害风险成倍增加。',
       action: '只保留一种并由医生逐步减量，禁止自行叠加；优先采用睡眠卫生教育与 CBT-I。',
       evidence: ['kb-beers-elderly', 'kb-falls'],

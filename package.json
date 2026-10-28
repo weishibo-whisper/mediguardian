@@ -3,7 +3,13 @@
   "version": "1.2.0",
   "private": true,
   "description": "守药人 MediGuardian — 面向基层医疗的多模态用药安全 Agent",
-  "keywords": ["ai-agent", "rag", "mcp", "nextjs", "medication-safety"],
+  "keywords": [
+    "ai-agent",
+    "rag",
+    "mcp",
+    "nextjs",
+    "medication-safety"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">=20"
@@ -14,6 +20,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "eval:rag": "node scripts/eval-retrieval.mjs",
     "smoke": "node scripts/smoke.mjs",
     "smoke:mcp": "node scripts/mcp-smoke.mjs",
@@ -40,6 +48,7 @@
     "eslint-config-next": "^15.1.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.9"
   }
 }

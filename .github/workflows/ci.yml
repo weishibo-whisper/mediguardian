@@ -1,0 +1,50 @@
+name: CI
+
+# 每次 push / PR 都跑一遍：类型 → 规范 → 单测 → 生产构建。
+# 存在的意义不是"绿标好看"，而是让"改一条临床规则不会悄悄破坏另一条"这件事可被机器证明。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: typecheck · lint · test · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript 严格检查
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: 单元测试（检索 / 工具 / 安全）
+        run: npm test
+
+      - name: 生产构建
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          # 构建不依赖任何外部服务：未配置 key 时规则引擎为默认路径
+          LLM_PROVIDER: mock

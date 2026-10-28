@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { KbChunk, KbHit, SearchOptions } from '@/lib/types';
 import { cosine, embed } from './embed';
+import { expandQuery } from './synonyms';
 import { clip, termFreq, tokenize } from './text';
 
 /**
@@ -159,15 +160,25 @@ function bm25(queryTokens: string[], chunk: KbChunk, index: IndexState): number 
 export async function searchKb(query: string, options: SearchOptions = {}): Promise<KbHit[]> {
   const { topK = 6, docIds, minScore = 0 } = options;
   const index = await getIndex();
+  // 领域同义词扩展：把「心慌/腿肿/睡不着」这类口语补上文档里的术语写法。
+  // 只在未限定 docIds（即主检索）时扩展；定向取证要的是精确命中，不做放大。
+  const expanded = docIds?.length ? query : expandQuery(query);
   const queryTokens = Array.from(new Set(tokenize(query)));
-  if (queryTokens.length === 0) return [];
+  const expandedTokens = Array.from(new Set(tokenize(expanded)));
+  if (expandedTokens.length === 0) return [];
 
   const pool = docIds?.length
     ? index.chunks.filter((c) => docIds.includes(c.docId))
     : index.chunks;
   if (pool.length === 0) return [];
 
-  const queryVec = embed(tokenize(query));
+  /**
+   * 分工原则：稀疏路（BM25）保持精确——只用原话，命中术语才算数；
+   * 稠密路（向量）承担泛化——吃扩展后的词，负责把口语映射到术语。
+   * 早前版本把扩展词也塞进 BM25，结果「心衰 布洛芬」这类精确提问被
+   * 「止痛药/NSAID/双氯芬酸」一大串同义词稀释，Hit@3 反而从 0.929 掉到 0.857。
+   */
+  const queryVec = embed(expandedTokens);
 
   // 双路打分
   const scored = pool.map((chunk) => ({
