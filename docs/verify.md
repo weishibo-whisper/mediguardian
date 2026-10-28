@@ -148,6 +148,30 @@ CI：`.github/workflows/ci.yml` 在每次 push / PR 跑 `typecheck → lint → 
 
 ---
 
+## 4.6 前端质量审计（`npm run audit:ui`）
+
+不是"人眼看一眼"，而是机器判定三件最容易出事的事：**运行时报错（含 hydration）、横向溢出、交互元素缺可访问名称**。
+
+```
+桌面 1440 /          无异常 · 横向溢出 无 · 按钮 2 个  · root 16px
+桌面 1440 /console   无异常 · 横向溢出 无 · 按钮 17 个 · root 16px
+桌面 1440 /arch      无异常 · 横向溢出 无 · 按钮 7 个  · root 16px
+桌面 1440 /safety    无异常 · 横向溢出 无 · 按钮 2 个  · root 16px
+窄屏 1024 × 4 页面   无异常 · 横向溢出 无
+大字模式 /            root 18.5px
+大字模式 /console     root 18.5px
+大字模式 /arch        root 18.5px
+大字模式 /safety      root 18.5px
+
+✓ 三个视口 × 四个页面：无运行时异常、无横向溢出、无缺失可访问名称
+```
+
+大字模式用例特意走真实路径：在首页点一次开关，然后逐页验证 `root font-size` 是否稳定在 18.5px（=`localStorage` 持久化 + rem 缩放同时成立）。审计脚本第一版用「手动改 DOM 属性」的方式测，被 `TopNav` 的挂载副作用按 `localStorage` 覆盖，得到的是假结论——这个坑本身就说明为什么 UI 断言要走真实交互路径。
+
+截图脚本 `npm run shots` 输出 10 张 1440×900@2x 图到 `docs/screenshots/`，可直接用于技术文档、PPT 与视频封面。
+
+---
+
 ## 5. 安全守门验证
 
 | 输入 | 预期 | 实测 |
