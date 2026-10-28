@@ -225,7 +225,7 @@ export function ChatPanel({
           return (
             <div key={m.id} className={cn('animate-fade-up', isUser && 'flex justify-end')}>
               {isUser ? (
-                <div className="max-w-[85%] rounded-2xl rounded-br-md bg-brand-600 px-3.5 py-2 text-[13px] leading-relaxed text-white shadow-soft">
+                <div className="max-w-[85%] rounded-2xl rounded-br-md bg-accent-solid px-3.5 py-2 text-[13px] leading-relaxed text-white shadow-soft">
                   {m.content}
                 </div>
               ) : (
@@ -257,7 +257,7 @@ export function ChatPanel({
                       {m.runId ? (
                         <Link
                           href={`/trace/${m.runId}`}
-                          className="ml-auto inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-0.5 transition hover:border-brand-200 hover:text-brand-700"
+                          className="ml-auto inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-0.5 transition hover:border-brand-200 hover:text-accent-text"
                         >
                           决策轨迹 <ArrowRight size={9} />
                         </Link>
@@ -265,7 +265,7 @@ export function ChatPanel({
                       <button
                         type="button"
                         onClick={() => speak(m.content)}
-                        className="inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-0.5 transition hover:border-brand-200 hover:text-brand-700"
+                        className="inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-0.5 transition hover:border-brand-200 hover:text-accent-text"
                         title="朗读（适老化）"
                       >
                         <Volume2 size={9} /> 朗读
@@ -332,7 +332,7 @@ export function ChatPanel({
                   ask(`我刚拍了药盒，识别到这些药：${names}。请把它们一起纳入相互作用核对。`);
                   setVision(null);
                 }}
-                className="mt-1.5 text-brand-700 underline-offset-2 hover:underline"
+                className="mt-1.5 text-accent-text underline-offset-2 hover:underline"
               >
                 把它们加入本次核对 →
               </button>

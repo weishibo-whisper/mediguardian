@@ -44,7 +44,7 @@ function renderInline(line: string, onCite?: (i: number) => void): ReactNode[] {
           key={key++}
           type="button"
           onClick={() => onCite?.(idx)}
-          className="mx-0.5 inline-flex translate-y-[-1px] items-center rounded-md border border-brand-200 bg-brand-50 px-1 align-middle font-mono text-[10px] font-semibold leading-4 text-brand-700 transition hover:bg-brand-100"
+          className="mx-0.5 inline-flex translate-y-[-1px] items-center rounded-md border border-brand-200 bg-brand-50 px-1 align-middle font-mono text-[10px] font-semibold leading-4 text-accent-text transition hover:bg-brand-100"
           title={`查看证据 ${idx}`}
         >
           {idx}

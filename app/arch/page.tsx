@@ -113,7 +113,7 @@ export default async function ArchPage() {
             {tools.map((tool) => (
               <li key={tool.name} className="rounded-xl border border-line bg-surface px-2.5 py-2">
                 <div className="flex items-center gap-1.5">
-                  <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-brand-700">
+                  <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-accent-text">
                     {tool.name}
                   </code>
                   <span className="text-[11px] font-medium text-ink">{tool.title}</span>
@@ -144,7 +144,7 @@ export default async function ArchPage() {
             ['事后', '每次运行写入 logs/runs/*.json 与 logs/audit.jsonl，可回放、可统计、可导出。'],
           ].map(([title, desc]) => (
             <div key={title} className="rounded-xl border border-line bg-surface px-3 py-2.5">
-              <p className="text-[11px] font-semibold text-brand-700">{title}</p>
+              <p className="text-[11px] font-semibold text-accent-text">{title}</p>
               <p className="mt-1 text-[10px] leading-relaxed text-ink-soft">{desc}</p>
             </div>
           ))}

@@ -94,7 +94,7 @@ export default async function HomePage() {
           <h1 className="mt-5 text-3xl font-semibold leading-[1.15] tracking-tight text-ink md:text-[2.6rem]">
             让每一位老人
             <br className="hidden md:block" />
-            <span className="text-brand-700">都能用对药</span>
+            <span className="text-accent-text">都能用对药</span>
           </h1>
 
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-ink-soft md:text-[0.95rem]">
@@ -163,7 +163,7 @@ export default async function HomePage() {
             const Icon = p.icon;
             return (
               <article key={p.title} className="card group p-4 transition hover:-translate-y-0.5 hover:shadow-lift">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-50 text-brand-700 transition group-hover:bg-brand-600 group-hover:text-white">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-50 text-accent-text transition group-hover:bg-accent-solid group-hover:text-white">
                   <Icon size={17} />
                 </span>
                 <h3 className="mt-2.5 text-sm font-semibold text-ink">{p.title}</h3>
@@ -265,7 +265,7 @@ export default async function HomePage() {
 
       {/* ================= 技术底座 ================= */}
       <section className="card flex flex-col items-start gap-3 p-5 md:flex-row md:items-center">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-600 text-white">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-solid text-white">
           <BrainCircuit size={19} />
         </span>
         <div className="flex-1">

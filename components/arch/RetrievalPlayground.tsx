@@ -75,7 +75,7 @@ export function RetrievalPlayground() {
               setQuery(s);
               run(s);
             }}
-            className="chip border-line bg-surface text-ink-mute transition hover:border-brand-200 hover:text-brand-700"
+            className="chip border-line bg-surface text-ink-mute transition hover:border-brand-200 hover:text-accent-text"
           >
             {s}
           </button>
@@ -88,11 +88,11 @@ export function RetrievalPlayground() {
         {hits.map((hit, i) => (
           <li key={hit.chunkId} className="rounded-xl border border-line bg-surface px-2.5 py-2">
             <div className="flex items-center gap-1.5">
-              <span className="grid h-4 w-4 place-items-center rounded bg-brand-600 font-mono text-[9px] font-bold text-white">
+              <span className="grid h-4 w-4 place-items-center rounded bg-accent-solid font-mono text-[9px] font-bold text-white">
                 {i + 1}
               </span>
               <span className="truncate text-[11px] font-medium text-ink">{hit.title}</span>
-              <span className="ml-auto shrink-0 font-mono text-[10px] text-brand-700">
+              <span className="ml-auto shrink-0 font-mono text-[10px] text-accent-text">
                 {(hit.score * 100).toFixed(0)}%
               </span>
             </div>

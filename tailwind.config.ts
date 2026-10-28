@@ -14,6 +14,21 @@ const config: Config = {
           600: 'rgb(var(--brand-600) / <alpha-value>)',
           700: 'rgb(var(--brand-700) / <alpha-value>)',
         },
+        /**
+         * 强调色的「按角色」令牌。
+         * brand-* 是色阶（按明度命名），accent-* 是按用途命名：
+         *   solid        填充块背景（配白字，实测 ≥ 4.5:1）
+         *   solid-hover  填充块悬停
+         *   text         浅/深底上的强调文字（每个主题各自取值）
+         * 拆开的原因：同一个青绿色既要当"白字的底"，又要当"底上的字"，
+         * 在深色主题下这两个用途需要相反的方向（底要压暗、字要提亮），
+         * 共用一个 token 必然有一个角色不合格。
+         */
+        accent: {
+          solid: 'rgb(var(--accent-solid) / <alpha-value>)',
+          'solid-hover': 'rgb(var(--accent-solid-hover) / <alpha-value>)',
+          text: 'rgb(var(--accent-text) / <alpha-value>)',
+        },
         ink: {
           DEFAULT: 'rgb(var(--ink) / <alpha-value>)',
           soft: 'rgb(var(--ink-soft) / <alpha-value>)',

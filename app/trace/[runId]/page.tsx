@@ -87,7 +87,7 @@ export default async function TracePage({ params }: { params: Promise<{ runId: s
                 <li key={call.id} className="rounded-lg border border-line bg-surface px-2 py-1.5">
                   <div className="flex items-center gap-1">
                     <Wrench size={10} className="text-brand-600" />
-                    <code className="font-mono text-[10px] text-brand-700">{call.name}</code>
+                    <code className="font-mono text-[10px] text-accent-text">{call.name}</code>
                     <span className="ml-auto font-mono text-[9px] text-ink-mute">{call.ms}ms</span>
                   </div>
                   <p className="mt-0.5 text-[10px] leading-relaxed text-ink-soft">{call.summary}</p>
@@ -138,7 +138,7 @@ export default async function TracePage({ params }: { params: Promise<{ runId: s
                 r.hits.map((hit, i) => (
                   <li key={`${r.query}-${hit.chunkId}-${i}`} className="rounded-lg border border-line bg-surface px-2.5 py-2">
                     <div className="flex items-center gap-1.5">
-                      <code className="rounded bg-surface-sunken px-1 font-mono text-[9px] text-brand-700">
+                      <code className="rounded bg-surface-sunken px-1 font-mono text-[9px] text-accent-text">
                         {hit.chunkId}
                       </code>
                       <span className="truncate text-[11px] font-medium text-ink">

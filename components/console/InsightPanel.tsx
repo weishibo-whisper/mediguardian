@@ -64,7 +64,7 @@ export function InsightPanel({ bundle }: { bundle: PatientBundle }) {
               role="tab"
               className={cn(
                 'flex flex-1 items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-[11px] font-medium transition',
-                active ? 'bg-brand-50 text-brand-700' : 'text-ink-mute hover:bg-surface-sunken hover:text-ink-soft',
+                active ? 'bg-brand-50 text-accent-text' : 'text-ink-mute hover:bg-surface-sunken hover:text-ink-soft',
               )}
             >
               <Icon size={12} />
@@ -170,7 +170,7 @@ function TraceView({ bundle }: { bundle: PatientBundle }) {
                 <p
                   className={cn(
                     'text-[12px] leading-snug',
-                    done ? 'font-medium text-ink' : running ? 'font-medium text-brand-700' : 'text-ink-mute',
+                    done ? 'font-medium text-ink' : running ? 'font-medium text-accent-text' : 'text-ink-mute',
                   )}
                 >
                   {step.title}
@@ -191,7 +191,7 @@ function TraceView({ bundle }: { bundle: PatientBundle }) {
           {live.toolCalls.map((call) => (
             <details key={call.id} className="group rounded-lg border border-line bg-surface px-2 py-1.5">
               <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[11px]">
-                <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-brand-700">
+                <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-[10px] text-accent-text">
                   {call.name}
                 </code>
                 <span className="ml-auto font-mono text-[9px] text-ink-mute">{call.ms}ms</span>
@@ -319,7 +319,7 @@ function EvidenceView({
             )}
           >
             <div className="flex items-center gap-1.5">
-              <span className="grid h-4 w-4 shrink-0 place-items-center rounded bg-brand-600 font-mono text-[9px] font-bold text-white">
+              <span className="grid h-4 w-4 shrink-0 place-items-center rounded bg-accent-solid font-mono text-[9px] font-bold text-white">
                 {i + 1}
               </span>
               <span className="truncate text-[11px] font-medium text-ink">{hit.title}</span>

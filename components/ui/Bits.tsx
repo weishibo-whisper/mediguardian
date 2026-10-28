@@ -12,7 +12,7 @@ export function Badge({
 }) {
   const tones = {
     neutral: 'border-line bg-surface-sunken text-ink-soft',
-    brand: 'border-brand-200 bg-brand-50 text-brand-700',
+    brand: 'border-brand-200 bg-brand-50 text-accent-text',
     danger: 'border-danger/25 bg-danger/10 text-danger',
     warn: 'border-warn/25 bg-warn/10 text-warn',
     ok: 'border-ok/25 bg-ok/10 text-ok',

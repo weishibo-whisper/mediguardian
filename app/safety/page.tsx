@@ -60,7 +60,7 @@ export default async function SafetyPage() {
           }
         />
 
-        <div className="mt-3">
+        <div className="mt-3 min-w-0">
           {audit.length === 0 ? (
             <Empty
               title="还没有运行记录"
@@ -68,7 +68,7 @@ export default async function SafetyPage() {
                 这里就会出现完整的审计条目与可回放的决策轨迹。"
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="w-full overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-[11px]">
                 <thead className="text-[10px] uppercase tracking-wide text-ink-mute">
                   <tr className="border-b border-line">
@@ -117,7 +117,8 @@ export default async function SafetyPage() {
                       <td className="py-2 pr-1">
                         <Link
                           href={`/trace/${entry.runId}`}
-                          className="inline-flex items-center gap-0.5 text-brand-700 hover:underline"
+                          /* 点击区：链接文字仅 17px 高，用 min-h-6 撑到 WCAG 2.5.8 的 24px */
+                          className="inline-flex min-h-6 items-center gap-0.5 text-accent-text hover:underline"
                         >
                           查看 <ArrowRight size={9} />
                         </Link>
@@ -135,13 +136,14 @@ export default async function SafetyPage() {
         <section className="card p-4">
           <SectionTitle title="可供回放的运行" desc="点击查看完整的规划、工具参数、检索证据与最终回答" />
           <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
+            {/* min-w-0：grid 子项默认 min-width:auto，里面那条 shrink-0 的 run id 会把 320px 视口顶出横向滚动条 */}
             {runs.map((run) => (
-              <li key={run.id}>
+              <li key={run.id} className="min-w-0">
                 <Link
                   href={`/trace/${run.id}`}
                   className="flex items-center gap-2 rounded-xl border border-line bg-surface px-2.5 py-2 text-[11px] transition hover:border-brand-200 hover:bg-brand-50/40"
                 >
-                  <code className="shrink-0 rounded bg-surface-sunken px-1 py-0.5 font-mono text-[9px] text-brand-700">
+                  <code className="shrink-0 rounded bg-surface-sunken px-1 py-0.5 font-mono text-[9px] text-accent-text">
                     {run.id}
                   </code>
                   <span className="truncate text-ink-soft">{run.question}</span>

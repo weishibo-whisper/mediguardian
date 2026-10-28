@@ -5,7 +5,12 @@
 /* ==================================================================
  * 设计令牌（Design Tokens）
  * 医疗场景的视觉基调：青绿=专业可信，暖橙=提醒，留白=降低认知负荷
- * 适老化：支持 18px 基准字号、正文字号可放大到 1.25 倍、对比度 ≥ 7:1
+ * 适老化：支持 18.5px 基准字号、整站 rem 缩放、正文对比度按 WCAG AA 实测校准
+ *
+ * 对比度口径：所有文字与其真实渲染背景的比值均用 scripts/ui-review.mjs
+ * 逐元素实测（含半透明叠加），而不是拿页面底色估算。当前最差组合为
+ * ink-mute on surface-sunken = 4.70:1（要求 4.5:1）。
+ * 早前版本 ink-mute 为 #6b8580，实测仅 3.63–3.97:1，属于不合格。
  * ================================================================== */
 :root {
   --brand-50: 240 253 250;
@@ -15,9 +20,14 @@
   --brand-600: 13 148 136;
   --brand-700: 15 118 110;
 
+  /* 按角色的强调色：见 tailwind.config.ts 中 accent 的注释 */
+  --accent-solid: 12 133 122; /* 白字实测 4.51:1 */
+  --accent-solid-hover: 15 118 110; /* 白字实测 5.47:1 */
+  --accent-text: 15 118 110; /* 白底 5.47:1 / 浮起面 5.18:1 */
+
   --ink: 11 31 28;
   --ink-soft: 52 82 76;
-  --ink-mute: 107 133 128;
+  --ink-mute: 92 114 110;
 
   --surface: 250 253 252;
   --surface-raised: 255 255 255;
@@ -25,8 +35,8 @@
   --line: 219 231 227;
 
   --danger: 197 45 45;
-  --warn: 176 92 8;
-  --ok: 15 125 92;
+  --warn: 157 81 6;
+  --ok: 15 124 91;
 
   --radius: 14px;
 }
@@ -38,6 +48,10 @@
   --brand-500: 45 212 191;
   --brand-600: 20 184 166;
   --brand-700: 13 148 136;
+
+  --accent-solid: 15 118 110; /* 白字实测 5.47:1（原 #14b8a6 仅 2.49:1） */
+  --accent-solid-hover: 11 107 97;
+  --accent-text: 45 212 191; /* 深色底 10.08:1 */
 
   --ink: 232 242 239;
   --ink-soft: 176 200 194;
@@ -104,7 +118,9 @@ body {
  * ================================================================== */
 @layer components {
   .card {
-    @apply rounded-2xl border border-line bg-surface-raised shadow-soft;
+    /* min-w-0：grid/flex 子项默认 min-width:auto，会被内部 <pre>/<table> 的
+       固有宽度撑破，导致 320px 下整页横向滚动。卡片一律允许收缩。 */
+    @apply min-w-0 rounded-2xl border border-line bg-surface-raised shadow-soft;
   }
 
   .btn {
@@ -113,7 +129,7 @@ body {
   }
 
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+    @apply btn bg-accent-solid text-white hover:bg-accent-solid-hover;
   }
 
   .btn-ghost {
@@ -143,7 +159,7 @@ body {
   @apply text-[0.95rem] leading-[1.85] text-ink;
 }
 .md h3 {
-  @apply mb-1.5 mt-4 first:mt-0 text-[0.95rem] font-semibold tracking-tight text-brand-700;
+  @apply mb-1.5 mt-4 first:mt-0 text-[0.95rem] font-semibold tracking-tight text-accent-text;
 }
 .md p {
   @apply my-1.5;

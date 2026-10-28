@@ -53,7 +53,7 @@ export function TopNav() {
     <header className="sticky top-0 z-40 border-b border-line/80 bg-surface/85 backdrop-blur-md">
       <div className="mx-auto flex h-14 w-full max-w-[1440px] items-center gap-3 px-4 md:px-6">
         <Link href="/" className="group flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-600 text-white shadow-soft transition group-hover:bg-brand-700">
+          <span className="grid h-8 w-8 place-items-center rounded-xl bg-accent-solid text-white shadow-soft transition group-hover:bg-accent-solid-hover">
             <ShieldCheck size={17} strokeWidth={2.2} />
           </span>
           <span className="flex flex-col leading-none">
@@ -74,7 +74,7 @@ export function TopNav() {
                 className={cn(
                   'rounded-lg px-3 py-1.5 text-sm transition',
                   active
-                    ? 'bg-brand-50 font-medium text-brand-700'
+                    ? 'bg-brand-50 font-medium text-accent-text'
                     : 'text-ink-soft hover:bg-surface-sunken hover:text-ink',
                 )}
               >
@@ -85,7 +85,7 @@ export function TopNav() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
-          <span className="hidden items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-medium text-brand-700 sm:flex">
+          <span className="hidden items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-medium text-accent-text sm:flex">
             <Sparkles size={12} />
             Agent 在线
           </span>
@@ -94,7 +94,7 @@ export function TopNav() {
             onClick={toggleBig}
             aria-pressed={big}
             title="大字模式（适老化）"
-            className={cn('btn-ghost !px-2.5', big && 'border-brand-200 text-brand-700')}
+            className={cn('btn-ghost !px-2.5', big && 'border-brand-200 text-accent-text')}
           >
             <Type size={16} />
             <span className="hidden text-xs sm:inline">大字</span>
@@ -121,7 +121,7 @@ export function TopNav() {
               href={item.href}
               className={cn(
                 'whitespace-nowrap rounded-lg px-2.5 py-1 text-xs transition',
-                active ? 'bg-brand-50 font-medium text-brand-700' : 'text-ink-soft',
+                active ? 'bg-brand-50 font-medium text-accent-text' : 'text-ink-soft',
               )}
             >
               {item.label}

@@ -42,7 +42,7 @@ export function PatientRail({ bundles, activeId }: { bundles: PatientBundle[]; a
                   <span
                     className={cn(
                       'grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-semibold',
-                      isActive ? 'bg-brand-600 text-white' : 'bg-surface-sunken text-ink-soft',
+                      isActive ? 'bg-accent-solid text-white' : 'bg-surface-sunken text-ink-soft',
                     )}
                   >
                     {b.patient.name.slice(0, 1)}
