@@ -1,0 +1,25 @@
+{
+  "generatedAt": "2026-11-16T06:48:06.688Z",
+  "dataset": {
+    "name": "MediGuardian Open-License Vision Robustness Benchmark v1",
+    "independentOriginals": 4,
+    "augmentedSamples": 36,
+    "licenseVerified": true
+  },
+  "status": "vision_model_not_configured",
+  "disclaimer": "由 4 张公开许可原图派生的 36 张鲁棒性样本，只验证工程链路与图像扰动稳定性，不代表 36 张独立真实样本或临床准确率；mock 结果不计入指标。",
+  "summary": {
+    "samples": 1,
+    "realSamples": 0,
+    "exactAccuracy": 0,
+    "meanRecall": 0
+  },
+  "results": [
+    {
+      "id": "ibuprofen-bottle-01",
+      "pass": false,
+      "errorCode": "VISION_MODEL_NOT_CONFIGURED",
+      "error": "当前文本模型不支持图片识别，请配置支持图像输入的 VISION_MODEL 后重试。"
+    }
+  ]
+}

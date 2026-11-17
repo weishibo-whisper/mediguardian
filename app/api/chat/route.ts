@@ -1,4 +1,4 @@
-import type { SseEvent } from '@/lib/types';
+import type { ConversationTurn, SseEvent } from '@/lib/types';
 import { runAgent } from '@/lib/agent/runtime';
 
 /**
@@ -15,7 +15,12 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  let body: { patientId?: string; question?: string; mode?: 'mock' | 'llm' | 'auto' };
+  let body: {
+    patientId?: string;
+    question?: string;
+    mode?: 'mock' | 'llm' | 'auto';
+    history?: ConversationTurn[];
+  };
   try {
     body = await req.json();
   } catch {
@@ -30,6 +35,16 @@ export async function POST(req: Request) {
   if (question.length > 1000) {
     return Response.json({ error: '问题过长（上限 1000 字）' }, { status: 400 });
   }
+  const history = Array.isArray(body.history)
+    ? body.history
+      .filter((turn): turn is ConversationTurn => (
+        Boolean(turn)
+        && (turn.role === 'user' || turn.role === 'assistant')
+        && typeof turn.content === 'string'
+      ))
+      .slice(-6)
+      .map((turn) => ({ role: turn.role, content: turn.content.slice(0, 2000) }))
+    : [];
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -41,7 +56,7 @@ export async function POST(req: Request) {
       };
 
       try {
-        await runAgent({ patientId, question, mode: body.mode ?? 'auto', emit: send });
+        await runAgent({ patientId, question, history, mode: body.mode ?? 'auto', emit: send });
       } catch (error) {
         send({
           type: 'error',

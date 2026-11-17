@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-11-16T06:44:57.971Z",
+  "status": "awaiting_real_participants",
+  "disclaimer": "仅汇总已确认同意且填写完整的匿名真人记录；空模板不产生任何用户研究结论。",
+  "summary": {
+    "participants": 0,
+    "completedTasks": 0,
+    "taskSuccessRate": null,
+    "averageTaskSeconds": null,
+    "susResponses": 0,
+    "averageSus": null
+  }
+}

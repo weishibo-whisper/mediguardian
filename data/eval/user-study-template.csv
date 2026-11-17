@@ -1,0 +1,6 @@
+participant_id,role,consent_confirmed,task_id,task_name,success,duration_seconds,first_decision_seconds,error_count,assistance_count,comprehension_1_5,notes
+P01,village_doctor,false,T1,发现处方药与自购药冲突,,,,,,,
+P01,village_doctor,false,T2,处理黑便与牙龈出血,,,,,,,
+P01,village_doctor,false,T3,上传药盒并人工确认,,,,,,,
+P01,village_doctor,false,T4,追问那我先做什么,,,,,,,
+P01,village_doctor,false,T5,找到依据和决策轨迹,,,,,,,

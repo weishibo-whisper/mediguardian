@@ -1,0 +1,13 @@
+{
+  "datasetName": "脱敏药盒真实样本",
+  "consentConfirmed": false,
+  "samples": [
+    {
+      "id": "sample-001",
+      "file": "vision-images/sample-001.jpg",
+      "expectedDrugIds": ["warfarin"],
+      "notes": "请填写光照、角度、遮挡等条件；不得包含姓名、证件号或病历号"
+    }
+  ]
+}
+

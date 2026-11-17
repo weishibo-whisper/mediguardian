@@ -1,0 +1,46 @@
+{
+  "retrievedAt": "2026-11-16",
+  "downloadNote": "Wikimedia upload 域在当前网络中不可直连；本地缓存由 wsrv.nl 仅做等比缩放与 JPEG 转码，权利信息以 Commons 来源页为准。",
+  "sources": [
+    {
+      "id": "ibuprofen-bottle",
+      "file": "vision-images/sources/ibuprofen-bottle.jpg",
+      "expectedDrugIds": ["ibuprofen"],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:IbuprofenBottle.JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/57/IbuprofenBottle.JPG",
+      "author": "Lycaon",
+      "license": "Public domain",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    {
+      "id": "aspirin-big-bottle",
+      "file": "vision-images/sources/aspirin-big-bottle.jpg",
+      "expectedDrugIds": ["aspirin"],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Big_Aspirin_Bottle.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/32/Big_Aspirin_Bottle.jpg",
+      "author": "Julian Oliver",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    {
+      "id": "metformin-package",
+      "file": "vision-images/sources/metformin-package.jpg",
+      "expectedDrugIds": ["metformin"],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Metformin_500mg_Tablets.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/db/Metformin_500mg_Tablets.jpg",
+      "author": "Erekii",
+      "license": "Public domain",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+    },
+    {
+      "id": "ibuprofen-capsules",
+      "file": "vision-images/sources/ibuprofen-capsules.jpg",
+      "expectedDrugIds": ["ibuprofen"],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Medication_potofen(Ibuprofen).JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c8/Medication_potofen%28Ibuprofen%29.JPG",
+      "author": "Namomi Gatogo",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    }
+  ]
+}

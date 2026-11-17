@@ -32,10 +32,10 @@ export function getSynonymGroups(): string[][] {
 }
 
 /** 命中同义词组时，把同组的其他表述追加到检索式中 */
-export function expandQuery(query: string): string {
+export function expandQuery(query: string, enabled = process.env.RAG_SYNONYMS !== 'off'): string {
   if (!query) return query;
   // 便于做 A/B 评测：RAG_SYNONYMS=off 时关闭扩展，用同一份探针测出扩展带来的真实增量
-  if (process.env.RAG_SYNONYMS === 'off') return query;
+  if (!enabled) return query;
   const extra: string[] = [];
   const seen = new Set<string>();
   for (const group of getSynonymGroups()) {

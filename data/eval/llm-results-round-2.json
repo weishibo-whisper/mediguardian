@@ -1,0 +1,108 @@
+{
+  "generatedAt": "2026-11-16T05:28:18.023Z",
+  "endpoint": "http://127.0.0.1:3000",
+  "status": "completed",
+  "disclaimer": "工程链路评测，不代表临床准确率。只有 actualMode=llm 的运行计入真实模型指标。",
+  "summary": {
+    "cases": 3,
+    "llmRuns": 3,
+    "passed": 3,
+    "fallbackRate": 0,
+    "avgWallMs": 1568,
+    "totalTokens": 0
+  },
+  "results": [
+    {
+      "id": "redflag",
+      "requestedMode": "llm",
+      "actualMode": "llm",
+      "model": "deepseek-chat",
+      "durationMs": 1891,
+      "wallMs": 1921,
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "citations": 11,
+      "verificationScore": 100,
+      "forceReferral": true,
+      "fallbackNotes": [
+        "大模型规划失败（fetch failed），已自动降级到规则引擎，后续流程不受影响。"
+      ],
+      "eventTypes": [
+        "run_start",
+        "safety",
+        "note",
+        "plan",
+        "step",
+        "tool_call",
+        "tool_result",
+        "retrieval",
+        "token",
+        "answer_final",
+        "answer_meta",
+        "done"
+      ],
+      "pass": true
+    },
+    {
+      "id": "multi-risk",
+      "requestedMode": "llm",
+      "actualMode": "llm",
+      "model": "deepseek-chat",
+      "durationMs": 1674,
+      "wallMs": 1680,
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "citations": 10,
+      "verificationScore": 100,
+      "forceReferral": false,
+      "fallbackNotes": [
+        "大模型规划失败（fetch failed），已自动降级到规则引擎，后续流程不受影响。"
+      ],
+      "eventTypes": [
+        "run_start",
+        "safety",
+        "note",
+        "plan",
+        "step",
+        "tool_call",
+        "tool_result",
+        "retrieval",
+        "token",
+        "answer_final",
+        "answer_meta",
+        "done"
+      ],
+      "pass": true
+    },
+    {
+      "id": "adherence",
+      "requestedMode": "llm",
+      "actualMode": "llm",
+      "model": "deepseek-chat",
+      "durationMs": 1097,
+      "wallMs": 1104,
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "citations": 9,
+      "verificationScore": 100,
+      "forceReferral": false,
+      "fallbackNotes": [
+        "大模型规划失败（fetch failed），已自动降级到规则引擎，后续流程不受影响。"
+      ],
+      "eventTypes": [
+        "run_start",
+        "note",
+        "plan",
+        "step",
+        "tool_call",
+        "tool_result",
+        "retrieval",
+        "token",
+        "answer_final",
+        "answer_meta",
+        "done"
+      ],
+      "pass": true
+    }
+  ]
+}

@@ -15,6 +15,7 @@ import {
   Layers,
   Loader2,
   ShieldAlert,
+  ShieldCheck,
   XCircle,
 } from 'lucide-react';
 
@@ -51,7 +52,7 @@ export function InsightPanel({ bundle }: { bundle: PatientBundle }) {
 
   return (
     <section className="card flex min-h-[calc(100vh-7rem)] flex-col overflow-hidden lg:sticky lg:top-[4.6rem] lg:h-[calc(100vh-6rem)]">
-      <div className="flex items-center gap-0.5 border-b border-line/80 px-2 py-1.5">
+      <div className="flex items-center gap-0.5 border-b border-line/80 px-2 py-1.5" role="tablist" aria-label="解释视图">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
@@ -60,8 +61,26 @@ export function InsightPanel({ bundle }: { bundle: PatientBundle }) {
               key={tab.id}
               type="button"
               onClick={() => setTab(tab.id)}
+              onKeyDown={(event) => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                const currentIndex = tabs.findIndex((item) => item.id === tab.id);
+                const nextIndex = event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? tabs.length - 1
+                    : event.key === 'ArrowRight'
+                      ? (currentIndex + 1) % tabs.length
+                      : (currentIndex - 1 + tabs.length) % tabs.length;
+                const next = tabs[nextIndex];
+                setTab(next.id);
+                document.getElementById(`insight-tab-${next.id}`)?.focus();
+              }}
               aria-selected={active}
+              aria-controls={`insight-panel-${tab.id}`}
+              id={`insight-tab-${tab.id}`}
               role="tab"
+              tabIndex={active ? 0 : -1}
               className={cn(
                 'flex flex-1 items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-[11px] font-medium transition',
                 active ? 'bg-brand-50 text-accent-text' : 'text-ink-mute hover:bg-surface-sunken hover:text-ink-soft',
@@ -79,7 +98,13 @@ export function InsightPanel({ bundle }: { bundle: PatientBundle }) {
         })}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-3" ref={evidenceRef}>
+      <div
+        className="flex-1 overflow-y-auto px-3 py-3"
+        ref={evidenceRef}
+        role="tabpanel"
+        id={`insight-panel-${activeTab}`}
+        aria-labelledby={`insight-tab-${activeTab}`}
+      >
         {activeTab === 'trace' ? (
           <TraceView bundle={bundle} />
         ) : activeTab === 'evidence' ? (
@@ -258,18 +283,51 @@ function TraceView({ bundle }: { bundle: PatientBundle }) {
       ) : null}
 
       {live.confidence !== undefined ? (
-        <div className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-1.5">
-          <span className="text-[10px] text-ink-mute">置信度</span>
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-sunken">
-            <div
-              className={cn(
-                'h-full rounded-full transition-all duration-500',
-                live.confidence >= 0.75 ? 'bg-ok' : live.confidence >= 0.5 ? 'bg-warn' : 'bg-danger',
-              )}
-              style={{ width: `${Math.round(live.confidence * 100)}%` }}
-            />
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-1.5">
+            <span className="text-[10px] text-ink-mute">综合置信度</span>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-sunken">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all duration-500',
+                  live.confidence >= 0.75 ? 'bg-ok' : live.confidence >= 0.5 ? 'bg-warn' : 'bg-danger',
+                )}
+                style={{ width: `${Math.round(live.confidence * 100)}%` }}
+              />
+            </div>
+            <span className="font-mono text-[10px] font-semibold text-ink">{Math.round(live.confidence * 100)}%</span>
           </div>
-          <span className="font-mono text-[10px] font-semibold text-ink">{Math.round(live.confidence * 100)}%</span>
+          {live.verification ? (
+            <div className="rounded-lg border border-line bg-surface px-2 py-2">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck size={12} className={live.verification.status === 'fail' ? 'text-danger' : 'text-ok'} />
+                <p className="text-[10px] font-medium text-ink">输出可信度自检</p>
+                <span className="tnum ml-auto font-mono text-[10px] font-semibold text-ink">
+                  {live.verification.score}/100
+                </span>
+              </div>
+              <p className="mt-1 text-[9px] leading-relaxed text-ink-mute">
+                工程指标，校验引用与证据链完整性，不代表临床准确率。
+              </p>
+              <ul className="mt-1.5 space-y-1">
+                {live.verification.checks.map((check) => (
+                  <li key={check.id} className="flex items-start gap-1.5 text-[9.5px] leading-relaxed">
+                    {check.status === 'pass' ? (
+                      <CheckCircle2 size={11} className="mt-0.5 shrink-0 text-ok" />
+                    ) : check.status === 'fail' ? (
+                      <XCircle size={11} className="mt-0.5 shrink-0 text-danger" />
+                    ) : (
+                      <AlertTriangle size={11} className="mt-0.5 shrink-0 text-warn" />
+                    )}
+                    <span>
+                      <span className="font-medium text-ink-soft">{check.label}</span>
+                      <span className="text-ink-mute"> · {check.detail}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -308,50 +366,70 @@ function EvidenceView({
       {hits.map((hit, i) => {
         const selected = selectedChunkId === hit.chunkId;
         return (
-          <button
+          <div
             key={hit.chunkId}
-            type="button"
-            data-chunk={hit.chunkId}
-            onClick={() => onSelect(selected ? null : hit.chunkId)}
             className={cn(
-              'w-full rounded-xl border px-2.5 py-2 text-left transition',
+              'w-full rounded-md border px-2.5 py-2 transition',
               selected ? 'border-accent-solid bg-surface' : 'border-line bg-surface hover:border-ink-mute',
             )}
           >
-            <div className="flex items-center gap-1.5">
-              <span className="grid h-4 w-4 shrink-0 place-items-center rounded bg-accent-solid font-mono text-[9px] font-bold text-white">
-                {i + 1}
-              </span>
-              <span className="truncate text-[11px] font-medium text-ink">{hit.title}</span>
-              <span className="ml-auto shrink-0 font-mono text-[9px] text-ink-mute">{(hit.score * 100).toFixed(0)}</span>
-            </div>
-            <p className="mt-0.5 text-[10px] text-ink-mute">{hit.section}</p>
-            {selected ? (
-              <>
-                <p className="mt-1.5 whitespace-pre-wrap text-[10px] leading-relaxed text-ink-soft">
-                  {hit.text.replace(/^#+\s*/gm, '').slice(0, 480)}
+            <button
+              type="button"
+              data-chunk={hit.chunkId}
+              onClick={() => onSelect(selected ? null : hit.chunkId)}
+              aria-expanded={selected}
+              className="w-full text-left"
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="grid h-4 w-4 shrink-0 place-items-center rounded bg-accent-solid font-mono text-[9px] font-bold text-white">
+                  {i + 1}
+                </span>
+                <span className="truncate text-[11px] font-medium text-ink">{hit.title}</span>
+                <span className="ml-auto shrink-0 font-mono text-[9px] text-ink-mute">{(hit.score * 100).toFixed(0)}</span>
+              </div>
+              <p className="mt-0.5 text-[10px] text-ink-mute">{hit.section}</p>
+              {selected ? (
+                <>
+                  <p className="mt-1.5 whitespace-pre-wrap text-[10px] leading-relaxed text-ink-soft">
+                    {hit.text.replace(/^#+\s*/gm, '').slice(0, 480)}
+                  </p>
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {(
+                      [
+                        ['bm25', hit.scoreBreakdown.bm25],
+                        ['vector', hit.scoreBreakdown.vector],
+                        ['rrf', hit.scoreBreakdown.rrf],
+                        ['rerank', hit.scoreBreakdown.rerank],
+                      ] as const
+                    ).map(([k, v]) => (
+                      <span key={k} className="chip border-line bg-surface-raised px-1 font-mono text-[9px] text-ink-mute">
+                        {k} {v.toFixed(2)}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-ink-soft">
+                  {hit.text.replace(/^#+\s*/gm, '').slice(0, 90)}…
                 </p>
-                <div className="mt-1.5 flex flex-wrap gap-1">
-                  {(
-                    [
-                      ['bm25', hit.scoreBreakdown.bm25],
-                      ['vector', hit.scoreBreakdown.vector],
-                      ['rrf', hit.scoreBreakdown.rrf],
-                      ['rerank', hit.scoreBreakdown.rerank],
-                    ] as const
-                  ).map(([k, v]) => (
-                    <span key={k} className="chip border-line bg-surface-raised px-1 font-mono text-[9px] text-ink-mute">
-                      {k} {v.toFixed(2)}
-                    </span>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-ink-soft">
-                {hit.text.replace(/^#+\s*/gm, '').slice(0, 90)}…
+              )}
+            </button>
+            {hit.source.references.length > 0 ? (
+              <p className="mt-1 border-t border-line pt-1 text-[9px] leading-relaxed text-warn">
+                候选来源：{hit.source.references.map((ref, index) => (
+                  <span key={ref.doi}>
+                    {index > 0 ? '；' : ''}
+                    <a href={ref.url} target="_blank" rel="noreferrer" className="inline-flex min-h-6 items-center underline underline-offset-2">
+                      {ref.organization} {ref.year}
+                    </a>
+                  </span>
+                ))}
+                {' · 内容映射待复核'}
               </p>
+            ) : (
+              <p className="mt-1 border-t border-line pt-1 text-[9px] text-warn">未登记外部来源</p>
             )}
-          </button>
+          </div>
         );
       })}
     </div>

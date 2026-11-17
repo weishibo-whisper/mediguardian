@@ -14,7 +14,7 @@
 import { chromium } from 'playwright';
 
 const BASE = (process.env.AUDIT_BASE || 'http://127.0.0.1:3000').replace(/\/$/, '');
-const ROUTES = ['/', '/console', '/evidence', '/safety'];
+const STATIC_ROUTES = ['/', '/console', '/evidence', '/safety'];
 
 const findings = [];
 let failures = 0;
@@ -24,8 +24,22 @@ const add = (route, level, message) => {
   if (level === '错误') failures += 1;
 };
 
+async function resolveRoutes() {
+  const routes = [...STATIC_ROUTES];
+  try {
+    const response = await fetch(`${BASE}/api/audit?limit=1`, { signal: AbortSignal.timeout(5000) });
+    const body = await response.json();
+    const runId = body.runs?.[0]?.id ?? body.audit?.[0]?.runId;
+    if (runId) routes.push(`/trace/${encodeURIComponent(runId)}`);
+  } catch {
+    console.warn('  ! 未找到可回放轨迹，本轮跳过 /trace 动态页');
+  }
+  return routes;
+}
+
 async function main() {
   const browser = await chromium.launch();
+  const routes = await resolveRoutes();
   // 同时验两种视口：桌面投影场景 + 平板窄屏，外加适老化大字模式
   const profiles = [
     { name: '桌面 1440', viewport: { width: 1440, height: 900 }, bigText: false },
@@ -44,7 +58,7 @@ async function main() {
     });
     page.on('pageerror', (err) => pageErrors.push(err.message));
 
-    for (const route of ROUTES) {
+    for (const route of routes) {
       const label = `${profile.name} ${route}`;
       consoleErrors.length = 0;
       pageErrors.length = 0;
@@ -127,7 +141,7 @@ async function main() {
       const fsHome = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
       if (fsHome !== '18.5px') add('大字模式 /', '错误', `点击后 root font-size 仍为 ${fsHome}`);
 
-      for (const route of ROUTES) {
+      for (const route of routes) {
         await page.goto(`${BASE}${route}`, { waitUntil: 'networkidle' });
         // 幂等：只在未开启时点一次。之前无条件点击，第二个页面就会把它关掉（状态是跨页持久的）
         const attr = await page.evaluate(() => document.documentElement.dataset.bigtext);
@@ -157,7 +171,7 @@ async function main() {
 
   console.log('');
   if (findings.length === 0) {
-    console.log('✓ 三个视口 × 四个页面：无运行时异常、无横向溢出、无缺失可访问名称\n');
+    console.log(`✓ 桌面/窄屏/大字 × ${routes.length} 个页面：无运行时异常、无横向溢出、无缺失可访问名称\n`);
     return;
   }
   console.table(findings);

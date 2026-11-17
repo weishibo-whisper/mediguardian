@@ -151,7 +151,7 @@ function assessLabs(ctx: ToolContext): ClinicalFinding[] {
         level: 'high',
         title: `二甲双胍需按肾功能减量（eGFR ${eGFR}）`,
         detail: 'eGFR 30–44 属减量区间，常用上限约 1 g/d，且需更频繁监测肾功能。',
-        action: '建议减量并在 4 周内复查 eGFR；避免脱水与擅自加量。',
+        action: '由医生评估是否减量，并在 4 周内复查 eGFR；避免脱水与擅自加量。',
         evidence: ['kb-diabetes-basics'],
       });
     }
@@ -198,7 +198,7 @@ function assessLabs(ctx: ToolContext): ClinicalFinding[] {
       level: 'moderate',
       title: '第一代抗组胺药抗胆碱能负荷高',
       detail: '苯海拉明可致意识模糊、便秘、尿潴留与跌倒，老年人应避免。',
-      action: '改用第二代抗组胺药或外用止痒制剂；已出现排尿困难者需及时就医。',
+      action: '由医生评估改用第二代抗组胺药或外用止痒制剂；已出现排尿困难者需及时就医。',
       evidence: ['kb-beers-elderly'],
     });
   }
@@ -233,7 +233,7 @@ function assessLabs(ctx: ToolContext): ClinicalFinding[] {
       level: 'high',
       title: '抗凝药与抗血小板药叠加',
       detail: '华法林 + 阿司匹林使消化道出血风险升高约 2–3 倍，仅在机械瓣、近期支架等明确指征下由专科联用。',
-      action: '核对是否存在明确联用指征；若无，建议停用阿司匹林并加用胃黏膜保护。',
+      action: '立即核对是否存在明确联用指征；由接诊医生决定是否暂缓或停用阿司匹林，并评估胃黏膜保护。',
       evidence: ['kb-anticoag-bleeding', 'kb-antiplatelet'],
     });
   }
@@ -250,7 +250,7 @@ function assessLabs(ctx: ToolContext): ClinicalFinding[] {
         level: 'high',
         title: `肾功能下降者使用 NSAID（eGFR ${eGFR}）`,
         detail: 'NSAID 收缩入球小动脉，在 eGFR < 60 时可诱发急性肾损伤并升高血钾。',
-        action: '停用口服 NSAID；疼痛改用对乙酰氨基酚或外用 NSAID 凝胶。',
+        action: '停止自行加服口服 NSAID；若为处方药，由医生决定是否暂停，替代止痛方案也需由医生评估。',
         evidence: ['kb-nsaid-renal'],
       });
     }
@@ -270,7 +270,7 @@ function assessLabs(ctx: ToolContext): ClinicalFinding[] {
         level: 'high',
         title: '「三联打击」组合：利尿剂 + ACEI/ARB + NSAID',
         detail: '三者共同降低肾小球滤过压，是社区获得性急性肾损伤最常见的可预防原因。',
-        action: '优先停用 NSAID，3–7 天内复查肌酐、血钾与尿量。',
+        action: '停止自行加服 NSAID；若为处方药，由医生决定是否暂停，3–7 天内复查肌酐、血钾与尿量。',
         evidence: ['kb-triple-whammy'],
       });
     }
@@ -318,7 +318,7 @@ function assessLabs(ctx: ToolContext): ClinicalFinding[] {
       level: 'moderate',
       title: '奥美拉唑可能削弱氯吡格雷疗效',
       detail: '奥美拉唑抑制 CYP2C19，减少氯吡格雷活性代谢物生成。',
-      action: '需 PPI 保护时优先换用泮托拉唑。',
+      action: '需 PPI 保护时，由医生评估是否改用泮托拉唑。',
       evidence: ['kb-ppi'],
     });
   }
@@ -330,7 +330,7 @@ function assessLabs(ctx: ToolContext): ClinicalFinding[] {
       level: 'high',
       title: '辛伐他汀与克拉霉素联用',
       detail: '强 CYP3A4 抑制使辛伐他汀浓度大幅升高，肌病与横纹肌溶解风险增加。',
-      action: '抗感染期间暂停辛伐他汀，或改用相互作用小的他汀。',
+      action: '抗感染期间由医生决定是否暂停辛伐他汀，或改用相互作用小的他汀。',
       evidence: ['kb-statin-muscle'],
     });
   }
@@ -437,27 +437,30 @@ function buildPlan(ctx: ToolContext, findings: ClinicalFinding[], interactionCou
     const isNsaid = ['ibuprofen', 'diclofenac'].includes(med.drugId);
 
     if (isNsaid && findingText.includes('NSAID')) {
-      stop.push({
+      const item = {
         name: `${med.name} ${med.dose}`,
         reason: `当前风险组合中的关键推手${selfBought ? '（且为自行加服，无医嘱）' : ''}：与抗凝/肾功能不全叠加时出血与急性肾损伤风险最高。`,
         evidence: ['kb-nsaid-anticoag', 'kb-nsaid-renal'],
-      });
+      };
+      // 只有明确属于自行加服的药，系统才给“停止自行服用”的即时动作；处方药一律交给医生决定。
+      if (selfBought) stop.push(item);
+      else adjust.push({ ...item, reason: `${item.reason} 请立即联系医生评估是否需要暂停或更换。` });
     } else if (med.drugId === 'glibenclamide' && patient.age >= 65) {
-      stop.push({
+      adjust.push({
         name: `${med.name} ${med.dose}`,
-        reason: '老年人使用长效磺脲类低血糖风险高，属 Beers 清单建议避免用药。',
+        reason: '老年人使用长效磺脲类低血糖风险高，属 Beers 清单建议避免用药；由医生制定换药或逐步停药方案。',
         evidence: ['kb-beers-elderly'],
       });
     } else if (med.drugId === 'diazepam' && ids.includes('estazolam')) {
-      stop.push({
+      adjust.push({
         name: `${med.name} ${med.dose}`,
-        reason: '与艾司唑仑同类叠加，镇静与跌倒风险成倍增加。',
+        reason: '与艾司唑仑同类叠加，镇静与跌倒风险成倍增加；需由医生制定逐步减停方案，不能自行骤停。',
         evidence: ['kb-beers-elderly', 'kb-falls'],
       });
     } else if (med.drugId === 'metformin' && (patient.labs.eGFR ?? 99) < 45) {
       adjust.push({
         name: `${med.name} ${med.dose}`,
-        reason: `eGFR ${patient.labs.eGFR}，需减量（≤1 g/d）并 4 周内复查肾功能；脱水、造影前后暂停。`,
+        reason: `eGFR ${patient.labs.eGFR}，需由医生评估减量（通常不超过 1 g/d）并在 4 周内复查肾功能；脱水、造影前后是否暂停也由医生确认。`,
         evidence: ['kb-diabetes-basics'],
       });
     } else if (med.drugId === 'warfarin') {
@@ -469,13 +472,13 @@ function buildPlan(ctx: ToolContext, findings: ClinicalFinding[], interactionCou
     } else if (med.drugId === 'spironolactone' && (patient.labs.potassium ?? 0) >= 5.5) {
       adjust.push({
         name: `${med.name} ${med.dose}`,
-        reason: `血钾 ${patient.labs.potassium}，建议暂停并当日复查血钾与心电图。`,
+        reason: `血钾 ${patient.labs.potassium}，当日复查血钾与心电图，由医生决定是否暂停。`,
         evidence: ['kb-hyperkalemia'],
       });
     } else if (med.drugId === 'aspirin' && ids.includes('warfarin')) {
-      stop.push({
+      adjust.push({
         name: `${med.name} ${med.dose}`,
-        reason: '无明确联用指征时，抗凝 + 抗血小板属出血高危组合，应与医生核对该药的必要性。',
+        reason: '抗凝 + 抗血小板属出血高危组合；立即就医核对联用指征，由接诊医生决定是否暂缓或停用。',
         evidence: ['kb-antiplatelet', 'kb-anticoag-bleeding'],
       });
     } else if (selfBought) {

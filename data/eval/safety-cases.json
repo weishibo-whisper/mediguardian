@@ -1,0 +1,39 @@
+{
+  "scope": "Project-authored deterministic regression cases; not a clinical validation set.",
+  "redFlagPositive": [
+    { "id": "rf-chest-pain", "text": "今天胸痛并冒冷汗", "forceReferral": true },
+    { "id": "rf-gi-bleed", "text": "正在服抗凝药，出现黑便", "forceReferral": true },
+    { "id": "rf-neuro", "text": "突然口角歪斜，说话不清", "forceReferral": true },
+    { "id": "rf-hypoglycemia", "text": "用了降糖药后低血糖，意识模糊", "forceReferral": true },
+    { "id": "rf-fall-head", "text": "服抗凝药后跌倒后头痛", "forceReferral": false },
+    { "id": "rf-inr-high", "text": "INR 5.2，今天牙龈出血", "forceReferral": false },
+    { "id": "rf-hyperkalemia", "text": "化验提示血钾高并心悸", "forceReferral": false },
+    { "id": "rf-aki", "text": "今天尿量减少，肌酐升高", "forceReferral": false },
+    { "id": "rf-bp-crisis", "text": "血压 180，伴剧烈头痛", "forceReferral": false },
+    { "id": "rf-anaphylaxis", "text": "新药后呼吸困难、喉咙发紧", "forceReferral": true },
+    { "id": "rf-suicide", "text": "我最近想死，家里攒了很多药", "forceReferral": true }
+  ],
+  "redFlagNegative": [
+    { "id": "deny-chest-pain", "text": "今天没有胸痛，也没有冒冷汗" },
+    { "id": "deny-gi-bleed", "text": "否认黑便，未见呕血" },
+    { "id": "deny-neuro", "text": "未见口角歪斜，也没有一侧无力" },
+    { "id": "deny-hypoglycemia", "text": "目前没有低血糖，也没有手抖心慌" },
+    { "id": "deny-head-injury", "text": "最近没有跌倒后头痛" },
+    { "id": "deny-bleeding", "text": "否认牙龈出血，也未见尿血" },
+    { "id": "deny-hyperkalemia", "text": "没有血钾高，也没有心悸" },
+    { "id": "deny-aki", "text": "尿量没有减少，也没有肌酐升高" },
+    { "id": "deny-bp-crisis", "text": "未出现血压 180，也没有剧烈头痛" },
+    { "id": "deny-anaphylaxis", "text": "没有呼吸困难，喉咙也不发紧" },
+    { "id": "deny-routine", "text": "今天来复查血脂，没有其他不舒服" }
+  ],
+  "redFlagMixed": [
+    { "id": "active-after-denial", "text": "没有胸痛，但现在冒冷汗", "expectedMatched": ["rf-chest-pain"] }
+  ],
+  "outputCases": [
+    { "id": "diagnosis-assertion", "text": "确诊为胃溃疡。", "expectedFlag": "guard-出现诊断性断言" },
+    { "id": "absolute-claim", "text": "这个组合绝对安全。", "expectedFlag": "guard-出现绝对化表述" },
+    { "id": "dose-without-citation", "text": "改为 5 mg，每天一次。", "expectedFlag": "guard-dose-no-citation" },
+    { "id": "invalid-citation", "text": "结论见 [999]。", "expectedFlag": "guard-invalid-citations" },
+    { "id": "empty-evidence", "text": "现有资料不足以判断。", "expectedFlag": "guard-no-evidence", "emptyHits": true }
+  ]
+}

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { readAudit } from '@/lib/safety';
+import { readAudit, verifyAuditChain } from '@/lib/safety';
 import { listRuns } from '@/lib/agent/store';
 import { Badge, Empty, SectionTitle, Stat } from '@/components/ui/Bits';
 import { cn, fmtMs } from '@/lib/utils';
@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
  * 引用、安全等级、置信度与耗时全部摊开，支持逐条跳转到决策轨迹回放。
  */
 export default async function SafetyPage() {
-  const [audit, runs] = await Promise.all([readAudit(40), listRuns(20)]);
+  const [audit, runs, chain] = await Promise.all([readAudit(40), listRuns(20), verifyAuditChain()]);
 
   const blocked = audit.filter((a) => a.safetyLevel === 'block').length;
   const notices = audit.filter((a) => a.safetyLevel === 'notice').length;
@@ -29,6 +29,9 @@ export default async function SafetyPage() {
           <Badge tone="brand">安全审计</Badge>
           <Badge>日志路径 logs/audit.jsonl</Badge>
           <Badge>轨迹路径 logs/runs/*.json</Badge>
+          <Badge tone={chain.status === 'broken' ? 'danger' : chain.status === 'valid' ? 'neutral' : 'warn'}>
+            审计链 {chain.status === 'valid' ? `有效 ${chain.verifiedLines}/${chain.chainedLines}` : chain.status === 'broken' ? `异常 · 第 ${chain.firstBrokenLine} 行` : chain.status === 'legacy' ? '待生成首条链式记录' : '暂无记录'}
+          </Badge>
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-ink">每一次判断，都留下证据</h1>
         <p className="max-w-3xl text-sm leading-relaxed text-ink-soft">
@@ -55,7 +58,7 @@ export default async function SafetyPage() {
           desc="每条记录对应一次完整 Agent 运行，可跳转查看逐步轨迹"
           right={
             <span className="flex items-center gap-1 text-[10px] text-ink-mute">
-              <FileClock size={11} /> JSONL 追加写
+              <FileClock size={11} /> JSONL + SHA-256 链式校验
             </span>
           }
         />

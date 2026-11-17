@@ -1,114 +1,169 @@
 #!/usr/bin/env node
 /**
- * 检索质量离线评测
- * ==================================================================
- * 用法：
- *   npm run dev            # 另开终端启动 Web 服务
- *   npm run eval:rag       # 默认（开启同义词扩展）
- *   RAG_SYNONYMS=off npm run eval:rag   # 关闭扩展，测出扩展带来的真实增量
- *
- * 探针分两类：
- *   term       —— 术语型提问（医生/药师会这么问），考「精确命中」
- *   colloquial —— 基层口语型提问（老人/家属会这么问），考「口语 → 术语」的泛化
- *
- * 分开统计的理由：把两类混在一起平均，会掩盖一个事实——
- * 通用检索在术语上很强，在口语上很弱，而后者才是本项目的真实用户。
+ * Project-curated retrieval benchmark. Relevance labels are author annotations,
+ * not clinical validation. Results are macro averages over the probe set.
  */
 
+import fs from 'node:fs/promises';
+
 const BASE = (process.env.EVAL_BASE || 'http://127.0.0.1:3000').replace(/\/$/, '');
+const DOCUMENT_TOP_K = 5;
+const CANDIDATE_CHUNKS = 12;
+const probes = JSON.parse(
+  await fs.readFile(new URL('../data/eval/rag-probes.json', import.meta.url), 'utf8'),
+);
 
-const PROBES = [
-  // ── 术语型 ────────────────────────────────────────────────
-  { kind: 'term', query: '华法林 布洛芬 出血 能一起吃吗', expected: 'kb-nsaid-anticoag' },
-  { kind: 'term', query: '牙龈出血 大便发黑 INR 偏高', expected: 'kb-anticoag-bleeding' },
-  { kind: 'term', query: '二甲双胍 eGFR 42 要不要减量', expected: 'kb-diabetes-basics' },
-  { kind: 'term', query: '格列本脲 老年人 低血糖', expected: 'kb-beers-elderly' },
-  { kind: 'term', query: '依那普利 螺内酯 血钾 5.6', expected: 'kb-hyperkalemia' },
-  { kind: 'term', query: '利尿剂 降压药 止痛药 一起用 伤肾', expected: 'kb-triple-whammy' },
-  { kind: 'term', query: '艾司唑仑 地西泮 一起吃 会摔倒吗', expected: 'kb-falls' },
-  { kind: 'term', query: '奥美拉唑 氯吡格雷 能不能一起用', expected: 'kb-ppi' },
-  { kind: 'term', query: '克拉霉素 辛伐他汀 肌肉疼', expected: 'kb-statin-muscle' },
-  { kind: 'term', query: '胺碘酮 华法林 INR 升高', expected: 'kb-arrhythmia-drugs' },
-  { kind: 'term', query: '地高辛 中毒 恶心 黄视', expected: 'kb-digoxin-toxicity' },
-  { kind: 'term', query: '用药重整 怎么核对 多重用药', expected: 'kb-med-reconciliation' },
-  { kind: 'term', query: '左氧氟沙星 钙片 间隔多久', expected: 'kb-antibiotics-interaction' },
-  { kind: 'term', query: '心衰 布洛芬 能不能吃', expected: 'kb-heart-failure' },
-
-  // ── 口语型（老人/家属原话，不含术语）──────────────────────
-  { kind: 'colloquial', query: '刷牙老出血，拉的屎还是黑的', expected: 'kb-anticoag-bleeding' },
-  { kind: 'colloquial', query: '膝盖疼吃了几天止痛药，腿肿了', expected: 'kb-nsaid-anticoag' },
-  { kind: 'colloquial', query: '心里发慌，是不是药吃重了', expected: 'kb-heart-failure' },
-  { kind: 'colloquial', query: '睡不着，自己加了一片安眠药', expected: 'kb-falls' },
-  { kind: 'colloquial', query: '家里换了低钠盐，人整天没劲', expected: 'kb-hyperkalemia' },
-  { kind: 'colloquial', query: '一袋药好几种，怎么核对', expected: 'kb-med-reconciliation' },
-  { kind: 'colloquial', query: '胃不舒服，医生开的胃药和防血栓的药能一起吃吗', expected: 'kb-ppi' },
-];
-
-async function search(query) {
-  const res = await fetch(`${BASE}/api/kb/search`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, topK: 5 }),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+if (!Array.isArray(probes) || probes.length === 0) {
+  throw new Error('RAG_EVAL_PROBES_EMPTY');
 }
 
-const fmt = (n) => n.toFixed(3);
+function uniqueDocIds(hits) {
+  const seen = new Set();
+  return hits.flatMap((hit) => {
+    if (!hit?.docId || seen.has(hit.docId)) return [];
+    seen.add(hit.docId);
+    return [hit.docId];
+  });
+}
 
-(async () => {
-  const mode = process.env.RAG_SYNONYMS === 'off' ? '关闭（基线）' : '开启（默认）';
-  console.log(`\n守药人 RAG 检索评测 · endpoint=${BASE} · 同义词扩展：${mode}\n`);
+function discountedGain(relevant, ranked) {
+  const dcg = ranked.slice(0, DOCUMENT_TOP_K).reduce(
+    (sum, docId, index) => sum + (relevant.has(docId) ? 1 / Math.log2(index + 2) : 0),
+    0,
+  );
+  const idealCount = Math.min(relevant.size, DOCUMENT_TOP_K);
+  const idcg = Array.from({ length: idealCount }, (_, index) => 1 / Math.log2(index + 2))
+    .reduce((sum, gain) => sum + gain, 0);
+  return idcg === 0 ? 0 : dcg / idcg;
+}
 
-  const stats = { term: { n: 0, hit1: 0, hit3: 0, mrr: 0 }, colloquial: { n: 0, hit1: 0, hit3: 0, mrr: 0 } };
+function measure(rows) {
+  const n = rows.length;
+  const metrics = { n, hit1: 0, hit3: 0, hit5: 0, mrr5: 0, recall5: 0, ndcg5: 0 };
+  for (const row of rows) {
+    const relevant = new Set(row.probe.relevant);
+    const firstRelevantRank = row.ranked.findIndex((docId) => relevant.has(docId)) + 1;
+    const retrievedRelevant = row.ranked.slice(0, DOCUMENT_TOP_K).filter((docId) => relevant.has(docId)).length;
+    if (row.ranked.slice(0, 1).some((docId) => relevant.has(docId))) metrics.hit1 += 1;
+    if (row.ranked.slice(0, 3).some((docId) => relevant.has(docId))) metrics.hit3 += 1;
+    if (retrievedRelevant > 0) metrics.hit5 += 1;
+    if (firstRelevantRank > 0 && firstRelevantRank <= DOCUMENT_TOP_K) metrics.mrr5 += 1 / firstRelevantRank;
+    metrics.recall5 += retrievedRelevant / relevant.size;
+    metrics.ndcg5 += discountedGain(relevant, row.ranked);
+  }
+  for (const key of ['hit1', 'hit3', 'hit5', 'mrr5', 'recall5', 'ndcg5']) metrics[key] /= n;
+  return metrics;
+}
+
+function printMetrics(label, stats) {
+  const fmt = (value) => value.toFixed(3);
+  console.log(`\n${label} (${stats.n} 条)`);
+  console.log(`  Hit@1    ${fmt(stats.hit1)}`);
+  console.log(`  Hit@3    ${fmt(stats.hit3)}`);
+  console.log(`  Hit@5    ${fmt(stats.hit5)}`);
+  console.log(`  MRR@5    ${fmt(stats.mrr5)}`);
+  console.log(`  Recall@5 ${fmt(stats.recall5)}`);
+  console.log(`  nDCG@5   ${fmt(stats.ndcg5)}`);
+}
+
+const CONFIGS = [
+  { id: 'bm25', label: '仅 BM25', mode: 'bm25', useSynonyms: false },
+  { id: 'vector', label: '仅哈希向量', mode: 'vector', useSynonyms: false },
+  { id: 'hybrid_no_synonyms', label: '混合检索（无同义词）', mode: 'hybrid', useSynonyms: false },
+  { id: 'hybrid', label: '完整混合检索', mode: 'hybrid', useSynonyms: true },
+];
+
+async function fetchRows(config) {
   const rows = [];
-
-  for (const probe of PROBES) {
-    let result;
+  for (const probe of probes) {
+    if (!probe.category || !probe.query || !Array.isArray(probe.relevant) || probe.relevant.length === 0) {
+      throw new Error(`RAG_EVAL_PROBE_INVALID:${JSON.stringify(probe)}`);
+    }
+    let response;
     try {
-      result = await search(probe.query);
+      response = await fetch(`${BASE}/api/kb/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: probe.query,
+          topK: CANDIDATE_CHUNKS,
+          mode: config.mode,
+          useSynonyms: config.useSynonyms,
+        }),
+      });
     } catch (error) {
-      console.error(`✗ 请求失败：${error.message}`);
-      console.error('  请确认已启动 Web 服务（默认 3000 端口），或设置 EVAL_BASE。');
+      console.error(`请求失败：${error.message}`);
+      console.error('请确认 Web 服务已启动（默认 3000 端口），或设置 EVAL_BASE。');
       process.exit(1);
     }
-    const docs = (result.hits || []).map((h) => h.docId);
-    const rank = docs.indexOf(probe.expected) + 1;
-    const s = stats[probe.kind];
-    s.n += 1;
-    if (rank === 1) s.hit1 += 1;
-    if (rank > 0 && rank <= 3) s.hit3 += 1;
-    if (rank > 0) s.mrr += 1 / rank;
-
-    rows.push({
-      类别: probe.kind === 'term' ? '术语' : '口语',
-      查询: probe.query,
-      期望: probe.expected,
-      实际首位: docs[0] ?? '(无)',
-      排名: rank === 0 ? '未命中' : `#${rank}`,
-    });
+    if (!response.ok) throw new Error(`RAG_EVAL_HTTP_${response.status}:${probe.query}`);
+    const result = await response.json();
+    rows.push({ probe, ranked: uniqueDocIds(result.hits || []) });
   }
+  return rows;
+}
 
-  console.table(rows);
+console.log(`\n守药人检索消融基准 · endpoint=${BASE} · documentTopK=${DOCUMENT_TOP_K} · candidateChunks=${CANDIDATE_CHUNKS}`);
+console.log('自标注文档相关性评测，不代表临床有效性验证。\n');
 
-  for (const [key, label] of [
-    ['term', '术语型探针'],
-    ['colloquial', '口语型探针'],
-  ]) {
-    const s = stats[key];
-    console.log(`\n${label}（${s.n} 条）`);
-    console.log(`  Hit@1  ${s.hit1}/${s.n}  (${fmt(s.hit1 / s.n)})`);
-    console.log(`  Hit@3  ${s.hit3}/${s.n}  (${fmt(s.hit3 / s.n)})`);
-    console.log(`  MRR    ${fmt(s.mrr / s.n)}`);
+const categories = [...new Set(probes.map((probe) => probe.category))];
+const report = {
+  generatedAt: new Date().toISOString(),
+  probeCount: probes.length,
+  documentTopK: DOCUMENT_TOP_K,
+  candidateChunks: CANDIDATE_CHUNKS,
+  labelStatus: 'project-authored-unreviewed',
+  disclaimer: '项目自标注文档相关性评测，不代表临床准确率或临床有效性。',
+  configurations: [],
+};
+
+let fullRows = [];
+for (const config of CONFIGS) {
+  console.log(`\n===== ${config.label} =====`);
+  const rows = await fetchRows(config);
+  if (config.id === 'hybrid') fullRows = rows;
+  const categoryMetrics = {};
+  for (const category of categories) {
+    const stats = measure(rows.filter((row) => row.probe.category === category));
+    categoryMetrics[category] = stats;
+    printMetrics(category, stats);
   }
+  const total = measure(rows);
+  printMetrics('合计（macro average）', total);
+  report.configurations.push({ ...config, total, categories: categoryMetrics });
+}
 
-  const total = stats.term.n + stats.colloquial.n;
-  const allHit1 = stats.term.hit1 + stats.colloquial.hit1;
-  const allHit3 = stats.term.hit3 + stats.colloquial.hit3;
-  const allMrr = stats.term.mrr + stats.colloquial.mrr;
-  console.log(`\n合计（${total} 条）`);
-  console.log(`  Hit@1  ${allHit1}/${total}  (${fmt(allHit1 / total)})`);
-  console.log(`  Hit@3  ${allHit3}/${total}  (${fmt(allHit3 / total)})`);
-  console.log(`  MRR    ${fmt(allMrr / total)}`);
-  console.log('\n以上指标可在技术文档「检索策略」一节直接引用（命令可复现）。\n');
-})();
+const incomplete = fullRows.filter((row) => {
+  const relevant = new Set(row.probe.relevant);
+  const found = new Set(row.ranked.slice(0, DOCUMENT_TOP_K).filter((docId) => relevant.has(docId)));
+  return found.size < relevant.size;
+});
+if (incomplete.length > 0) {
+  console.log(`\n未完整召回全部标注文档的探针（top ${DOCUMENT_TOP_K}，${incomplete.length} 条）：`);
+  for (const row of incomplete) {
+    const found = row.ranked.slice(0, DOCUMENT_TOP_K).filter((docId) => row.probe.relevant.includes(docId));
+    const missing = row.probe.relevant.filter((docId) => !found.includes(docId));
+    console.log(`  [${row.probe.category}] ${row.probe.query}`);
+    console.log(`    已召回：${found.join(', ') || '(无)'}；未召回：${missing.join(', ')}；top：${row.ranked.slice(0, DOCUMENT_TOP_K).join(', ') || '(无)'}`);
+  }
+}
+
+report.incomplete = incomplete.map((row) => {
+  const found = row.ranked.slice(0, DOCUMENT_TOP_K).filter((docId) => row.probe.relevant.includes(docId));
+  return {
+    category: row.probe.category,
+    query: row.probe.query,
+    found,
+    missing: row.probe.relevant.filter((docId) => !found.includes(docId)),
+    ranked: row.ranked.slice(0, DOCUMENT_TOP_K),
+  };
+});
+
+await fs.writeFile(
+  new URL('../data/eval/rag-results.json', import.meta.url),
+  `${JSON.stringify(report, null, 2)}\n`,
+  'utf8',
+);
+
+console.log('\n已写入 data/eval/rag-results.json，依据页将展示本次消融结果。');
+console.log('标签为项目自标注，需独立复核；请勿将这些指标解释为临床准确率。');

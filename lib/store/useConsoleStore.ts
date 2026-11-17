@@ -8,6 +8,7 @@ import type {
   SafetyReport,
   SseEvent,
   ToolCallRecord,
+  VerificationReport,
 } from '@/lib/types';
 import { shortId } from '@/lib/utils';
 
@@ -33,6 +34,7 @@ export interface LiveState {
   safety?: SafetyReport;
   citations: string[];
   confidence?: number;
+  verification?: VerificationReport;
   notes: Array<{ text: string; level?: 'info' | 'warn' }>;
   elapsedMs?: number;
   error?: string;
@@ -143,6 +145,11 @@ export const useConsoleStore = create<ConsoleState>((set, get) => ({
             messages: s.messages.map((m) => (m.id === botId ? { ...m, content: m.content + event.text } : m)),
           }));
           break;
+        case 'answer_final':
+          set((s) => ({
+            messages: s.messages.map((m) => (m.id === botId ? { ...m, content: event.text } : m)),
+          }));
+          break;
         case 'safety':
           set((s) => ({
             live: {
@@ -159,9 +166,21 @@ export const useConsoleStore = create<ConsoleState>((set, get) => ({
           break;
         case 'answer_meta':
           set((s) => ({
-            live: { ...s.live, citations: event.citations, confidence: event.confidence },
+            live: {
+              ...s.live,
+              citations: event.citations,
+              confidence: event.confidence,
+              verification: event.verification,
+            },
             messages: s.messages.map((m) =>
-              m.id === botId ? { ...m, citations: event.citations, confidence: event.confidence } : m,
+              m.id === botId
+                ? {
+                    ...m,
+                    citations: event.citations,
+                    confidence: event.confidence,
+                    verification: event.verification,
+                  }
+                : m,
             ),
           }));
           break;
@@ -193,7 +212,14 @@ export const useConsoleStore = create<ConsoleState>((set, get) => ({
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patientId: state.patientId, question: text }),
+        body: JSON.stringify({
+          patientId: state.patientId,
+          question: text,
+          history: state.messages.slice(-6).map((message) => ({
+            role: message.role,
+            content: message.content.slice(0, 2000),
+          })),
+        }),
       });
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 

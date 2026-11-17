@@ -39,17 +39,23 @@ function renderInline(line: string, onCite?: (i: number) => void): ReactNode[] {
       nodes.push(<code key={key++}>{token.slice(1, -1)}</code>);
     } else {
       const idx = Number(token.slice(1, -1));
-      nodes.push(
+      const citationClass = 'mx-0.5 inline-flex min-h-6 min-w-6 translate-y-[-1px] items-center justify-center rounded-md border border-brand-200 bg-brand-50 px-1 align-middle font-mono text-[10px] font-semibold leading-4 text-accent-text';
+      nodes.push(onCite ? (
         <button
           key={key++}
           type="button"
-          onClick={() => onCite?.(idx)}
-          className="mx-0.5 inline-flex translate-y-[-1px] items-center rounded-md border border-brand-200 bg-brand-50 px-1 align-middle font-mono text-[10px] font-semibold leading-4 text-accent-text transition hover:bg-brand-100"
+          onClick={() => onCite(idx)}
+          className={`${citationClass} transition-colors hover:bg-brand-100`}
+          aria-label={`查看证据 ${idx}`}
           title={`查看证据 ${idx}`}
         >
           {idx}
-        </button>,
-      );
+        </button>
+      ) : (
+        <span key={key++} className={citationClass} title={`证据 ${idx}`}>
+          {idx}
+        </span>
+      ));
     }
     lastIndex = match.index + token.length;
   }

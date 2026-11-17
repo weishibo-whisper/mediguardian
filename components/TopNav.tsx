@@ -21,6 +21,18 @@ const NAV = [
   { href: '/safety', label: '安全审计' },
 ];
 
+function applyTheme(theme: 'light' | 'dark') {
+  const previousGuard = document.head.querySelector<HTMLStyleElement>('style[data-theme-transition-guard]');
+  previousGuard?.remove();
+  const guard = document.createElement('style');
+  guard.dataset.themeTransitionGuard = 'true';
+  guard.textContent = '*,*::before,*::after{transition:none!important}';
+  document.head.appendChild(guard);
+  document.documentElement.dataset.theme = theme;
+  void document.documentElement.offsetHeight;
+  requestAnimationFrame(() => guard.remove());
+}
+
 export function TopNav() {
   const pathname = usePathname();
   const [big, setBig] = useState(false);
@@ -32,7 +44,7 @@ export function TopNav() {
     setBig(bigSaved);
     setDark(themeSaved === 'dark');
     document.documentElement.dataset.bigtext = String(bigSaved);
-    document.documentElement.dataset.theme = themeSaved === 'dark' ? 'dark' : 'light';
+    applyTheme(themeSaved === 'dark' ? 'dark' : 'light');
   }, []);
 
   const toggleBig = () => {
@@ -46,7 +58,7 @@ export function TopNav() {
     const next = !dark;
     setDark(next);
     localStorage.setItem('mg.theme', next ? 'dark' : 'light');
-    document.documentElement.dataset.theme = next ? 'dark' : 'light';
+    applyTheme(next ? 'dark' : 'light');
   };
 
   return (

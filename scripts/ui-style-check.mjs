@@ -16,10 +16,34 @@
 import { chromium } from 'playwright';
 
 const BASE = (process.env.CHECK_BASE || 'http://127.0.0.1:3000').replace(/\/$/, '');
-const ROUTES = ['/', '/console', '/evidence', '/safety'];
+const STATIC_ROUTES = ['/', '/console', '/evidence', '/safety'];
 const RADIUS_LIMIT = 14;
 
 const findings = [];
+
+async function resolveRoutes() {
+  const routes = [...STATIC_ROUTES];
+  try {
+    const response = await fetch(`${BASE}/api/audit?limit=1`, { signal: AbortSignal.timeout(5000) });
+    const body = await response.json();
+    const runId = body.runs?.[0]?.id ?? body.audit?.[0]?.runId;
+    if (runId) routes.push(`/trace/${encodeURIComponent(runId)}`);
+  } catch {
+    console.warn('  ! 未找到可回放轨迹，本轮跳过 /trace 动态页');
+  }
+  return routes;
+}
+
+async function ensureTheme(page, theme) {
+  const current = await page.evaluate(() => document.documentElement.getAttribute('data-theme') ?? 'light');
+  if (current !== theme) {
+    const toggle = page.getByRole('button', { name: /主题|深色|浅色/ }).first();
+    if (!(await toggle.count())) throw new Error(`找不到主题切换按钮，无法验证 ${theme} 主题`);
+    await toggle.click();
+    await page.waitForFunction((target) => document.documentElement.getAttribute('data-theme') === target, theme);
+  }
+  return page.evaluate(() => document.documentElement.getAttribute('data-theme') ?? 'light');
+}
 
 const scan = (limit) => {
   const RADIUS_LIMIT = limit;
@@ -52,23 +76,20 @@ const scan = (limit) => {
 
 const main = async () => {
   const browser = await chromium.launch();
+  const routes = await resolveRoutes();
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'zh-CN' });
   const page = await ctx.newPage();
 
   for (const theme of ['light', 'dark']) {
-    for (const route of ROUTES) {
+    for (const route of routes) {
       await page.goto(`${BASE}${route}`, { waitUntil: 'networkidle' });
-      if (theme === 'dark') {
-        const t = page.getByRole('button', { name: /主题|深色|浅色/ }).first();
-        if (await t.count()) await t.click();
-        await page.waitForTimeout(250);
-      }
+      const appliedTheme = await ensureTheme(page, theme);
       const r = await page.evaluate(scan, RADIUS_LIMIT);
       const total = r.blur.length + r.backdrop.length + r.bigRadius.length + r.softShadow.length;
       for (const kind of Object.keys(r)) {
-        for (const item of r[kind].slice(0, 3)) findings.push({ theme, route, 规则: kind, 元素: item.label, 实测: item.value });
+        for (const item of r[kind].slice(0, 3)) findings.push({ theme: appliedTheme, route, 规则: kind, 元素: item.label, 实测: item.value });
       }
-      console.log(`  ${theme.padEnd(5)} ${route.padEnd(9)} 违规 ${total}`);
+      console.log(`  ${appliedTheme.padEnd(5)} ${route.padEnd(28)} 违规 ${total}`);
     }
   }
   await browser.close();

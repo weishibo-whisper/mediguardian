@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { getRedFlags, getPatient } from '@/lib/data';
-import { SAFETY_DISCLAIMER, detectRedFlags, guardOutput, maskPii, screenInput } from '@/lib/safety';
+import { enforceReferralPriority, SAFETY_DISCLAIMER, detectRedFlags, guardOutput, maskPii, screenInput } from '@/lib/safety';
 import type { KbHit, Patient, RedFlagRule } from '@/lib/types';
 
 /**
@@ -80,6 +80,7 @@ describe('PII 脱敏', () => {
   it('screenInput 输出的 sanitizedText 已脱敏（推理只能用脱敏文本）', async () => {
     const report = await screenInput('我的电话是 13900001111，最近头晕', patient);
     expect(report.sanitizedText).not.toContain('13900001111');
+    expect(report.flags[0].detail).toContain('已提交至本应用服务端');
   });
 });
 
@@ -91,6 +92,13 @@ describe('输出守门', () => {
       title: 'A',
       section: '小节',
       tags: [],
+      source: {
+        docId: 'kb-a',
+        authoredBy: 'fixture',
+        contentReviewStatus: 'unreviewed',
+        contentReviewNote: 'test fixture',
+        references: [],
+      },
       text: '华法林与阿司匹林联用增加出血风险',
       score: 1,
       scoreBreakdown: { bm25: 1, vector: 1, rrf: 1, rerank: 0 },
@@ -115,9 +123,36 @@ describe('输出守门', () => {
     expect(r.text).toContain('2.5 mg');
   });
 
+  it('越界引用会从最终回答中移除并留下安全标记', () => {
+    const r = guardOutput('需要复核相互作用 [999]。', hits, 'strict');
+    expect(r.text).not.toContain('[999]');
+    expect(r.flags.some((f) => f.id === 'guard-invalid-citations')).toBe(true);
+  });
+
+  it('拦截缺少医生确认边界的停药或换药动作', () => {
+    const unsafe = guardOutput('建议停用阿司匹林并改用其他药物 [1]。', hits, 'strict');
+    expect(unsafe.flags.some((flag) => flag.id === 'guard-medication-action-scope')).toBe(true);
+    expect(unsafe.text).toContain('请勿自行调整处方药');
+
+    const scoped = guardOutput('由接诊医生决定是否停用阿司匹林 [1]。', hits, 'strict');
+    expect(scoped.flags.some((flag) => flag.id === 'guard-medication-action-scope')).toBe(false);
+  });
+
   it('守门不会把免责声明之外的内容删空', () => {
     const r = guardOutput('### 一句话结论\n请按医嘱服药，7 天后复查。', hits, 'strict');
     expect(r.text.length).toBeGreaterThan(10);
     expect(SAFETY_DISCLAIMER.length).toBeGreaterThan(10);
+  });
+});
+
+describe('强制转诊优先级', () => {
+  it('红旗命中时为缺少紧急提示的模型回答补上确定性处置前缀', async () => {
+    const report = await screenInput('今天胸口疼，冒冷汗', patient);
+    const answer = enforceReferralPriority('### 一句话结论\n请联系医生复核。', report);
+    expect(answer.startsWith('### 紧急处置')).toBe(true);
+    expect(answer.indexOf('请立即拨打 120')).toBeLessThan(answer.indexOf('请联系医生复核'));
+
+    const routine = await screenInput('我妈这些药一起吃安全吗', patient);
+    expect(enforceReferralPriority('普通用药核对结果。', routine)).toBe('普通用药核对结果。');
   });
 });

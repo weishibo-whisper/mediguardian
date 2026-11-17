@@ -23,6 +23,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "eval:rag": "node scripts/eval-retrieval.mjs",
+    "eval:llm": "node scripts/eval-llm.mjs",
+    "eval:llm:summary": "node scripts/summarize-llm-evals.mjs",
+    "eval:vision:build": "python scripts/build-vision-benchmark.py",
+    "eval:vision": "node scripts/eval-vision.mjs",
+    "eval:safety": "vitest run tests/safety-eval.test.ts",
+    "study:summary": "node scripts/summarize-user-study.mjs",
+    "review:export": "node scripts/export-clinical-review.mjs",
     "smoke": "node scripts/smoke.mjs",
     "smoke:mcp": "node scripts/mcp-smoke.mjs",
     "audit:ui": "node scripts/ui-audit.mjs",
@@ -30,7 +37,8 @@
     "audit:style": "node scripts/ui-style-check.mjs",
     "shots": "node scripts/screenshots.mjs",
     "mcp": "node mcp/server.mjs",
-    "audit:report": "node scripts/audit-report.mjs"
+    "audit:report": "node scripts/audit-report.mjs",
+    "audit:verify": "node scripts/verify-audit-chain.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",

@@ -167,7 +167,7 @@
     "b": "amlodipine",
     "severity": "moderate",
     "mechanism": "NSAID 引起水钠潴留并削弱降压药疗效，血压可升高 5 mmHg 左右",
-    "action": "短期使用并监测血压；血压未达标者优先停用 NSAID",
+    "action": "短期使用并监测血压；血压未达标时联系医生评估是否停用 NSAID",
     "evidence": ["kb-nsaid-renal", "kb-hypertension-basics"]
   },
   {

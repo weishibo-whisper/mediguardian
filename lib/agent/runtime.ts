@@ -1,5 +1,6 @@
 import type {
   AgentRun,
+  ConversationTurn,
   KbHit,
   Patient,
   PlanStep,
@@ -19,7 +20,7 @@ import {
   type MedPlan,
   type ToolContext,
 } from '@/lib/tools';
-import { appendAudit, guardOutput, screenInput, SAFETY_DISCLAIMER } from '@/lib/safety';
+import { appendAudit, enforceReferralPriority, guardOutput, maskPii, screenInput, SAFETY_DISCLAIMER } from '@/lib/safety';
 import {
   SYSTEM_PROMPT,
   buildAnswerPrompt,
@@ -30,6 +31,7 @@ import {
 import { chatComplete, chatStream, getLlmConfig } from '@/lib/llm/provider';
 import { shortId } from '@/lib/utils';
 import { saveRun } from './store';
+import { verifyAnswerGrounding } from './verification';
 
 /**
  * Agent 运行时（核心）
@@ -49,13 +51,29 @@ export type EngineMode = 'mock' | 'llm';
 export interface RunParams {
   patientId: string;
   question: string;
+  history?: ConversationTurn[];
   /** auto：有 key 用 LLM，无 key 自动降级 */
   mode?: EngineMode | 'auto';
   emit: (event: SseEvent) => void;
 }
 
+/**
+ * 对“那我先做什么”“这个要紧吗”一类追问补回上一轮用户主题。
+ * 只在明显的指代/承接句上启用，避免把两个独立问题强行拼在一起。
+ */
+export function resolveFollowUpQuestion(question: string, history: ConversationTurn[] = []): string {
+  const normalized = question.trim();
+  const followUp = /^(?:那(?:我|现在|接下来|该|要|能|先|还|怎么办|怎么做|要不要|多久|呢|，|,)|那么(?:我|现在|接下来|该|要|能|先|还|怎么办|怎么做|要不要|呢|，|,)|然后|还有|所以|刚才|上面|之前|(?:这个|这种|这些|上述|它(?:们)?)(?:要|该|是|会|能|有|怎|多|哪|先|还|为|对|可|应|需|严|危|好|不|呢|，|,|$))/.test(normalized)
+    || /^(?:怎么办|怎么做|要不要|多久|先做什么|哪一个|为什么|严重吗|要紧吗|能吃吗|可以吗)[？?]?$/.test(normalized);
+  if (!followUp) return question;
+  const previous = [...history].reverse().find((turn) => turn.role === 'user' && turn.content.trim());
+  if (!previous) return question;
+  const previousText = maskPii(previous.content).text.trim().slice(0, 500);
+  return previousText ? `${previousText}\n追问：${question}` : question;
+}
+
 const MAX_STEPS = Number(process.env.AGENT_MAX_STEPS ?? 6);
-const MOCK_DELAY_MS = Number(process.env.MOCK_STREAM_DELAY_MS ?? 6);
+const STREAM_DELAY_MS = Number(process.env.MOCK_STREAM_DELAY_MS ?? 6);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /* ==================================================================
@@ -363,7 +381,7 @@ function composeMockAnswer(input: ComposeInput): string {
 
   /* --- 现在就做 --- */
   const todo: string[] = [];
-  if (plan?.stop.length) todo.push(`**停**：${plan.stop[0].name} —— ${stripSuggest(plan.stop[0].reason)}`);
+  if (plan?.stop.length) todo.push(`**停自购药**：${plan.stop[0].name} —— ${stripSuggest(plan.stop[0].reason)}`);
   if (plan?.adjust.length) todo.push(`**调**：${plan.adjust[0].name} —— ${stripSuggest(plan.adjust[0].reason)}`);
   if (plan?.education.length) todo.push(`**教**：${plan.education[0]}`);
   if (plan?.followUp.length) {
@@ -379,6 +397,9 @@ function composeMockAnswer(input: ComposeInput): string {
   const doctorItems: string[] = [];
   if (plan?.adjust.length) {
     plan.adjust.slice(0, 3).forEach((a) => doctorItems.push(`${a.name} 的剂量调整幅度（依据复查结果由医生核定）`));
+  }
+  if (plan?.stop.length) {
+    plan.stop.slice(0, 3).forEach((item) => doctorItems.push(`${item.name} 后续是否继续使用（当前仅停止自行加服，长期方案由医生核定）`));
   }
   if (referral) doctorItems.push(`转往${referral.department}评估：${referral.reason}`);
   if (patient.adherence.score < 70) doctorItems.push('是否需要家属代为分装药盒、改用一日一次的长效方案以提升依从性');
@@ -407,7 +428,8 @@ function composeMockAnswer(input: ComposeInput): string {
   return lines.join('\n');
 }
 
-/** 把文本切成小片，模拟流式输出（规则引擎没有 token 概念，按标点切片更自然） */function chunkText(text: string, size = 18): string[] {
+/** 只把已通过守门的回答分片发送，避免原始模型输出短暂出现在界面。 */
+function chunkText(text: string, size = 18): string[] {
   const pieces: string[] = [];
   for (let i = 0; i < text.length; i += size) pieces.push(text.slice(i, i + size));
   return pieces;
@@ -459,16 +481,22 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
   const medViews = await getPatientMedViews(patient);
 
   /* ---------- 1. 输入安全审查 ---------- */
-  const safety = await screenInput(question, patient);
+  const currentSafety = await screenInput(question, patient);
+  const resolvedQuestion = resolveFollowUpQuestion(currentSafety.sanitizedText, params.history);
+  const usedConversationContext = resolvedQuestion !== currentSafety.sanitizedText;
+  // 追问继承上轮主题后必须重新过安全闸门，否则“那我先做什么”会丢掉
+  // 上轮“黑便、出血”等红旗等级，只保留了语义却没有保留处置优先级。
+  const safety = usedConversationContext ? await screenInput(resolvedQuestion, patient) : currentSafety;
+  const effectiveQuestion = safety.sanitizedText;
   if (safety.flags.length > 0) {
     emit({ type: 'safety', level: safety.level, flags: safety.flags, forceReferral: safety.forceReferral });
   }
 
   const ctx: ToolContext = { patient, medViews, runId };
-  ctx.question = safety.sanitizedText;
+  ctx.question = effectiveQuestion;
 
   /* ---------- 2. 规划 ---------- */
-  const fallbackPlan = mockPlan(safety.sanitizedText, ctx, safety.forceReferral);
+  const fallbackPlan = mockPlan(effectiveQuestion, ctx, safety.forceReferral);
   let steps = fallbackPlan;
   let planReasoning = '规则引擎：采用标准用药安全流水线（固定 7 步，便于审计与复现）';
 
@@ -478,7 +506,7 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
       const { text } = await chatComplete(
         [
           { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: buildPlanPrompt(safety.sanitizedText, patientContext, toolSpecsForPrompt()) },
+          { role: 'user', content: buildPlanPrompt(effectiveQuestion, patientContext, toolSpecsForPrompt()) },
         ],
         { json: true, temperature: 0.1, maxTokens: 700 },
       );
@@ -497,6 +525,9 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
 
   emit({ type: 'plan', steps });
   emit({ type: 'note', text: planReasoning });
+  if (usedConversationContext) {
+    emit({ type: 'note', text: '已结合上一轮用户问题消解本次追问语境；历史文本已脱敏并限制长度。' });
+  }
   if (safety.forceReferral) {
     emit({ type: 'note', level: 'warn', text: '检测到危险信号：本轮回答将以「立即就医」为第一优先级，用药建议仅作参考。' });
   }
@@ -516,10 +547,10 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
     const patched = { ...step };
     if (patched.tool === 'search_kb') {
       // 规则引擎检索式：用户原话 + 主诉（+ 少量未提到的药名），详见 buildRetrievalQuery
-      patched.detail = `检索式：${buildRetrievalQuery(safety.sanitizedText, patient.chiefComplaint, retrievalDrugs).slice(0, 40)}…`;
+      patched.detail = `检索式：${buildRetrievalQuery(effectiveQuestion, patient.chiefComplaint, retrievalDrugs).slice(0, 40)}…`;
     }
     await execStep(patched, ctx as ToolContext & { question: string }, state, emit, patched.tool === 'search_kb'
-      ? { query: buildRetrievalQuery(safety.sanitizedText, patient.chiefComplaint, retrievalDrugs), topK: 8 }
+      ? { query: buildRetrievalQuery(effectiveQuestion, patient.chiefComplaint, retrievalDrugs), topK: 8 }
       : patched.tool === 'make_referral'
         ? { reason: safety.flags.find((f) => f.category === 'redflag')?.title ?? '用药相关高风险需上级医院评估', urgency: safety.forceReferral ? 'emergency' : 'urgent' }
         : undefined);
@@ -553,7 +584,7 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
   let tokenUsage: { prompt: number; completion: number } | undefined;
 
   const composed = composeMockAnswer({
-    question: safety.sanitizedText,
+    question: effectiveQuestion,
     patient,
     medViews,
     findings,
@@ -576,7 +607,7 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
         {
           role: 'user' as const,
           content: buildAnswerPrompt(
-            safety.sanitizedText,
+            effectiveQuestion,
             patientContext,
             formatEvidence(state.evidence),
             toolDigest || '（无）',
@@ -586,7 +617,6 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
       for await (const chunk of chatStream(messages, { temperature: config.temperature })) {
         if (chunk.delta) {
           answer += chunk.delta;
-          emit({ type: 'token', text: chunk.delta });
         }
         if (chunk.usage) tokenUsage = chunk.usage;
       }
@@ -603,20 +633,13 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
   }
 
   if (!answer) {
-    // 规则引擎：按标点切片流式输出，保证前端交互体验一致
     answer = composed;
-    for (const piece of chunkText(composed)) {
-      emit({ type: 'token', text: piece });
-      if (MOCK_DELAY_MS > 0) await sleep(MOCK_DELAY_MS);
-    }
   }
 
   /* ---------- 6. 输出守门 ---------- */
+  answer = enforceReferralPriority(answer, safety);
   const guarded = guardOutput(answer, state.evidence, (process.env.SAFETY_MODE as 'strict' | 'balanced') ?? 'strict');
-  if (guarded.text !== answer) {
-    emit({ type: 'token', text: `\n\n${guarded.text.slice(answer.length)}` });
-    answer = guarded.text;
-  }
+  answer = guarded.text;
   if (guarded.flags.length > 0) {
     emit({
       type: 'safety',
@@ -626,7 +649,17 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
     });
   }
 
+  for (const piece of chunkText(answer)) {
+    emit({ type: 'token', text: piece });
+    if (STREAM_DELAY_MS > 0) await sleep(STREAM_DELAY_MS);
+  }
+  emit({ type: 'answer_final', text: guarded.text });
+
   const citationCheck = verifyCitations(answer, state.evidence);
+  const requiredFindingDocs = findings
+    .filter((finding) => finding.level !== 'info')
+    .flatMap((finding) => finding.evidence);
+  const verification = verifyAnswerGrounding(answer, state.evidence, requiredFindingDocs);
 
   /**
    * 安全等级取「输入闸门」与「输出闸门」中更严重的一档。
@@ -652,13 +685,14 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
     citations: citationCheck.validIds,
     confidence,
     disclaimer: SAFETY_DISCLAIMER,
+    verification,
   });
 
   const durationMs = Date.now() - t0;
   const run: AgentRun = {
     id: runId,
     patientId,
-    question: safety.sanitizedText,
+    question: currentSafety.sanitizedText,
     mode,
     model: mode === 'llm' ? config.model : 'rule-engine-v1.2',
     startedAt,
@@ -672,10 +706,11 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
       flags: [...safety.flags, ...guarded.flags],
       forceReferral: safety.forceReferral,
       requireDisclaimer: true,
-      sanitizedText: safety.sanitizedText,
+      sanitizedText: currentSafety.sanitizedText,
     },
     answer,
     confidence,
+    verification,
     tokenUsage,
   };
 
@@ -684,7 +719,7 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
     runId,
     at: startedAt,
     patientId,
-    question: safety.sanitizedText.slice(0, 120),
+    question: currentSafety.sanitizedText.slice(0, 120),
     mode,
     model: run.model,
     safetyLevel: run.safety.level,
@@ -695,6 +730,6 @@ export async function runAgent(params: RunParams): Promise<AgentRun> {
     confidence,
   });
 
-  emit({ type: 'done', runId, durationMs, tokenUsage });
+  emit({ type: 'done', runId, durationMs, mode, model: run.model, tokenUsage });
   return run;
 }

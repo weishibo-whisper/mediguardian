@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { KbChunk, KbHit, SearchOptions } from '@/lib/types';
+import type { KbChunk, KbHit, KbSourceRecord, SearchOptions } from '@/lib/types';
 import { cosine, embed } from './embed';
 import { expandQuery } from './synonyms';
 import { clip, termFreq, tokenize } from './text';
@@ -19,6 +19,7 @@ import { clip, termFreq, tokenize } from './text';
  */
 
 const KB_DIR = path.join(process.cwd(), 'data', 'kb');
+const SOURCE_REGISTRY_PATH = path.join(process.cwd(), 'data', 'kb', 'sources.json');
 const BM25_K1 = 1.5;
 const BM25_B = 0.75;
 const RRF_K = 60;
@@ -26,7 +27,7 @@ const RRF_K = 60;
 interface IndexState {
   chunks: KbChunk[];
   /** 文档级元信息，供引用面板展示来源 */
-  docs: Array<{ id: string; title: string; sectionCount: number }>;
+  docs: Array<{ id: string; title: string; sectionCount: number; source: KbSourceRecord }>;
   df: Map<string, number>;
   avgLen: number;
   builtAt: string;
@@ -58,7 +59,13 @@ function parseFrontmatter(raw: string): { meta: Record<string, string | string[]
 }
 
 /** 按 `## ` 标题切分语义块；过短的段落并入上一块，避免碎片化 */
-function chunkDocument(docId: string, title: string, tags: string[], body: string): KbChunk[] {
+function chunkDocument(
+  docId: string,
+  title: string,
+  tags: string[],
+  source: KbSourceRecord,
+  body: string,
+): KbChunk[] {
   const rawSections = body.split(/\r?\n(?=##\s)/);
   const chunks: KbChunk[] = [];
   let carry = '';
@@ -82,6 +89,7 @@ function chunkDocument(docId: string, title: string, tags: string[], body: strin
       title,
       section: sectionTitle,
       tags,
+      source,
       text,
       tf: termFreq(tokens),
       len: tokens.length,
@@ -104,6 +112,8 @@ function chunkDocument(docId: string, title: string, tags: string[], body: strin
 /** 构建索引（首次访问时执行一次，随后进程内缓存） */
 async function buildIndex(): Promise<IndexState> {
   const files = (await fs.readdir(KB_DIR)).filter((f) => f.endsWith('.md'));
+  const sourceRecords = JSON.parse(await fs.readFile(SOURCE_REGISTRY_PATH, 'utf-8')) as KbSourceRecord[];
+  const sourceById = new Map(sourceRecords.map((record) => [record.docId, record]));
   const chunks: KbChunk[] = [];
   const docs: IndexState['docs'] = [];
 
@@ -113,9 +123,11 @@ async function buildIndex(): Promise<IndexState> {
     const docId = (meta.id as string) || file.replace(/\.md$/, '');
     const title = (meta.title as string) || docId;
     const tags = Array.isArray(meta.tags) ? (meta.tags as string[]) : [];
-    const docChunks = chunkDocument(docId, title, tags, body);
+    const source = sourceById.get(docId);
+    if (!source) throw new Error(`KB_SOURCE_RECORD_MISSING:${docId}`);
+    const docChunks = chunkDocument(docId, title, tags, source, body);
     chunks.push(...docChunks);
-    docs.push({ id: docId, title, sectionCount: docChunks.length });
+    docs.push({ id: docId, title, sectionCount: docChunks.length, source });
   }
 
   const df = new Map<string, number>();
@@ -158,13 +170,15 @@ function bm25(queryTokens: string[], chunk: KbChunk, index: IndexState): number 
  * @param options.minScore 最低分数阈值
  */
 export async function searchKb(query: string, options: SearchOptions = {}): Promise<KbHit[]> {
-  const { topK = 6, docIds, minScore = 0 } = options;
+  const { topK = 6, docIds, minScore = 0, mode = 'hybrid', useSynonyms = true } = options;
   const index = await getIndex();
   // 领域同义词扩展：把「心慌/腿肿/睡不着」这类口语补上文档里的术语写法。
   // 只在未限定 docIds（即主检索）时扩展；定向取证要的是精确命中，不做放大。
-  const expanded = docIds?.length ? query : expandQuery(query);
+  const expanded = docIds?.length ? query : expandQuery(query, useSynonyms);
   const queryTokens = Array.from(new Set(tokenize(query)));
   const expandedTokens = Array.from(new Set(tokenize(expanded)));
+  const queryTokenSet = new Set(queryTokens);
+  const synonymTokens = docIds?.length ? [] : expandedTokens.filter((term) => !queryTokenSet.has(term));
   if (expandedTokens.length === 0) return [];
 
   const pool = docIds?.length
@@ -173,24 +187,39 @@ export async function searchKb(query: string, options: SearchOptions = {}): Prom
   if (pool.length === 0) return [];
 
   /**
-   * 分工原则：稀疏路（BM25）保持精确——只用原话，命中术语才算数；
-   * 稠密路（向量）承担泛化——吃扩展后的词，负责把口语映射到术语。
-   * 早前版本把扩展词也塞进 BM25，结果「心衰 布洛芬」这类精确提问被
-   * 「止痛药/NSAID/双氯芬酸」一大串同义词稀释，Hit@3 反而从 0.929 掉到 0.857。
+   * 原话 BM25 是精确锚点；人工维护的同义词另走低权重稀疏补充路，
+   * 仅在原话与扩展词都有命中时占 20%。若原话完全无命中，扩展词可独立召回，
+   * 避免把哈希向量的碰撞相似度误当成语义证据。稠密路仍使用完整扩展查询。
    */
   const queryVec = embed(expandedTokens);
 
   // 双路打分
-  const scored = pool.map((chunk) => ({
+  const lexicalCandidates = pool.map((chunk) => ({
     chunk,
-    bm25: bm25(queryTokens, chunk, index),
+    originalBm25: bm25(queryTokens, chunk, index),
+    synonymBm25: synonymTokens.length > 0 ? bm25(synonymTokens, chunk, index) : 0,
     vector: cosine(queryVec, chunk.vector),
   }));
 
-  const maxBm25 = Math.max(...scored.map((s) => s.bm25), 1e-6);
+  const maxOriginalBm25 = Math.max(...lexicalCandidates.map((item) => item.originalBm25), 0);
+  const maxSynonymBm25 = Math.max(...lexicalCandidates.map((item) => item.synonymBm25), 0);
+  const hasOriginalMatches = maxOriginalBm25 > 0;
+  const hasSynonymMatches = synonymTokens.length > 0 && maxSynonymBm25 > 0;
+  const scored = lexicalCandidates.map((item) => ({
+    ...item,
+    bm25: hasOriginalMatches && hasSynonymMatches
+      ? 0.8 * (item.originalBm25 / maxOriginalBm25) + 0.2 * (item.synonymBm25 / maxSynonymBm25)
+      : hasOriginalMatches
+        ? item.originalBm25 / maxOriginalBm25
+        : hasSynonymMatches
+          ? item.synonymBm25 / maxSynonymBm25
+          : 0,
+  }));
 
   // RRF 融合：按两路排名取倒数排名分，抑制单路异常高分的支配
-  const byBm25 = [...scored].sort((a, b) => b.bm25 - a.bm25);
+  // 零 BM25 的并列块没有词项相关性；若仍按原始索引顺序排进 RRF，
+  // 会让文件顺序获得虚假的稀疏路加分，压过真正靠向量召回的口语结果。
+  const byBm25 = scored.filter((item) => item.bm25 > 0).sort((a, b) => b.bm25 - a.bm25);
   const byVec = [...scored].sort((a, b) => b.vector - a.vector);
   const rrfMap = new Map<string, number>();
   byBm25.forEach((s, rank) => {
@@ -202,7 +231,7 @@ export async function searchKb(query: string, options: SearchOptions = {}): Prom
   const maxRrf = Math.max(...Array.from(rrfMap.values()), 1e-6);
 
   const hits: KbHit[] = scored.map((s) => {
-    const bm25n = s.bm25 / maxBm25;
+    const bm25n = s.bm25;
     const rrf = (rrfMap.get(s.chunk.id) ?? 0) / maxRrf;
 
     // 规则重排：标题/小节/标签命中给额外权重（医疗检索中「术语精确命中」比语义漂移更可信）
@@ -210,7 +239,11 @@ export async function searchKb(query: string, options: SearchOptions = {}): Prom
     const metaHits = queryTokens.filter((t) => metaTokens.has(t)).length;
     const rerank = Math.min(0.2, metaHits * 0.05);
 
-    const score = Math.min(1, 0.5 * bm25n + 0.35 * s.vector + 0.15 * rrf + rerank);
+    const score = mode === 'bm25'
+      ? Math.min(1, bm25n + rerank)
+      : mode === 'vector'
+        ? s.vector
+        : Math.min(1, 0.5 * bm25n + 0.35 * s.vector + 0.15 * rrf + rerank);
 
     return {
       chunkId: s.chunk.id,
@@ -218,6 +251,7 @@ export async function searchKb(query: string, options: SearchOptions = {}): Prom
       title: s.chunk.title,
       section: s.chunk.section,
       tags: s.chunk.tags,
+      source: s.chunk.source,
       text: s.chunk.text,
       score: Number(score.toFixed(4)),
       scoreBreakdown: {
@@ -242,7 +276,7 @@ export async function searchKb(query: string, options: SearchOptions = {}): Prom
 export function verifyCitations(answer: string, hits: KbHit[]) {
   const cited = new Set<number>();
   const invalid = new Set<number>();
-  const regex = /\[(\d{1,2})\]/g;
+  const regex = /\[(\d+)\]/g;
   let m: RegExpExecArray | null;
   while ((m = regex.exec(answer)) !== null) {
     const idx = Number(m[1]);

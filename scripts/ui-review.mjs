@@ -18,9 +18,33 @@
 import { chromium } from 'playwright';
 
 const BASE = (process.env.REVIEW_BASE || 'http://127.0.0.1:3000').replace(/\/$/, '');
-const ROUTES = ['/', '/console', '/evidence', '/safety'];
+const STATIC_ROUTES = ['/', '/console', '/evidence', '/safety'];
 
 const results = { contrast: [], focus: [], hitArea: [], reflow: [] };
+
+async function resolveRoutes() {
+  const routes = [...STATIC_ROUTES];
+  try {
+    const response = await fetch(`${BASE}/api/audit?limit=1`, { signal: AbortSignal.timeout(5000) });
+    const body = await response.json();
+    const runId = body.runs?.[0]?.id ?? body.audit?.[0]?.runId;
+    if (runId) routes.push(`/trace/${encodeURIComponent(runId)}`);
+  } catch {
+    console.warn('  ! 未找到可回放轨迹，本轮跳过 /trace 动态页');
+  }
+  return routes;
+}
+
+async function ensureTheme(page, theme) {
+  const current = await page.evaluate(() => document.documentElement.getAttribute('data-theme') ?? 'light');
+  if (current !== theme) {
+    const toggle = page.getByRole('button', { name: /主题|深色|浅色/ }).first();
+    if (!(await toggle.count())) throw new Error(`找不到主题切换按钮，无法验证 ${theme} 主题`);
+    await toggle.click();
+    await page.waitForFunction((target) => document.documentElement.getAttribute('data-theme') === target, theme);
+  }
+  return page.evaluate(() => document.documentElement.getAttribute('data-theme') ?? 'light');
+}
 
 const CONTRAST_SCRIPT = () => {
   const parse = (str) => {
@@ -125,20 +149,16 @@ const CONTRAST_SCRIPT = () => {
 
 async function run() {
   const browser = await chromium.launch();
+  const routes = await resolveRoutes();
   console.log(`\n界面评审取证 · ${BASE}\n`);
 
   for (const theme of ['light', 'dark']) {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'zh-CN' });
     const page = await ctx.newPage();
 
-    for (const route of ROUTES) {
+    for (const route of routes) {
       await page.goto(`${BASE}${route}`, { waitUntil: 'networkidle' });
-      if (theme === 'dark') {
-        const toggle = page.getByRole('button', { name: /主题|深色|浅色/ }).first();
-        if (await toggle.count()) await toggle.click();
-        await page.waitForTimeout(350);
-      }
-      const applied = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+      const applied = await ensureTheme(page, theme);
 
       // ① 对比度
       const contrast = await page.evaluate(CONTRAST_SCRIPT);
@@ -201,9 +221,10 @@ async function run() {
     }
 
     // ④ 320px 重排 + 200% 缩放
-    for (const route of ROUTES) {
+    for (const route of routes) {
       await page.setViewportSize({ width: 320, height: 720 });
       await page.goto(`${BASE}${route}`, { waitUntil: 'networkidle' });
+      const appliedTheme = await ensureTheme(page, theme);
       const narrow = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
         viewport: window.innerWidth,
@@ -224,9 +245,9 @@ async function run() {
           .map((el) => `${el.tagName.toLowerCase()}.${(typeof el.className === 'string' ? el.className : '').slice(0, 30)}`),
       }));
       if (narrow.scrollWidth > narrow.viewport + 2) {
-        results.reflow.push({ theme: applied(theme), route, width: 320, ...narrow });
+        results.reflow.push({ theme: appliedTheme, route, width: 320, ...narrow });
       }
-      console.log(`  320px  ${route.padEnd(9)} scrollWidth ${narrow.scrollWidth} / ${narrow.viewport}`);
+      console.log(`  320px ${appliedTheme.padEnd(5)} ${route.padEnd(28)} scrollWidth ${narrow.scrollWidth} / ${narrow.viewport}`);
     }
 
     await ctx.close();
@@ -248,9 +269,9 @@ async function run() {
   report('点击区小于 24px', results.hitArea, ['theme', 'route', 'tag', 'label', 'w', 'h']);
   report('320px 横向溢出', results.reflow, ['theme', 'route', 'scrollWidth', 'viewport', 'overflowing']);
   console.log('');
+  const failureCount = Object.values(results).reduce((sum, rows) => sum + rows.length, 0);
+  if (failureCount > 0) process.exitCode = 1;
 }
-
-const applied = (t) => t;
 
 run().catch((error) => {
   console.error('取证失败：', error?.message ?? error);

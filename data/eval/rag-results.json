@@ -1,0 +1,327 @@
+{
+  "generatedAt": "2026-11-12T06:19:24.005Z",
+  "probeCount": 63,
+  "documentTopK": 5,
+  "candidateChunks": 12,
+  "labelStatus": "project-authored-unreviewed",
+  "disclaimer": "项目自标注文档相关性评测，不代表临床准确率或临床有效性。",
+  "configurations": [
+    {
+      "id": "bm25",
+      "label": "仅 BM25",
+      "mode": "bm25",
+      "useSynonyms": false,
+      "total": {
+        "n": 63,
+        "hit1": 0.8253968253968254,
+        "hit3": 0.9682539682539683,
+        "hit5": 0.9841269841269841,
+        "mrr5": 0.8955026455026455,
+        "recall5": 0.9100529100529101,
+        "ndcg5": 0.8632172377775448
+      },
+      "categories": {
+        "term": {
+          "n": 16,
+          "hit1": 0.9375,
+          "hit3": 1,
+          "hit5": 1,
+          "mrr5": 0.96875,
+          "recall5": 1,
+          "ndcg5": 0.975821699547841
+        },
+        "colloquial": {
+          "n": 15,
+          "hit1": 0.6666666666666666,
+          "hit3": 0.9333333333333333,
+          "hit5": 0.9333333333333333,
+          "mrr5": 0.788888888888889,
+          "recall5": 0.7777777777777778,
+          "ndcg5": 0.7117036837495903
+        },
+        "paraphrase": {
+          "n": 16,
+          "hit1": 0.8125,
+          "hit3": 0.9375,
+          "hit5": 1,
+          "mrr5": 0.890625,
+          "recall5": 0.9375,
+          "ndcg5": 0.8864868069825487
+        },
+        "multi_risk": {
+          "n": 16,
+          "hit1": 0.875,
+          "hit3": 1,
+          "hit5": 1,
+          "mrr5": 0.9270833333333333,
+          "recall5": 0.9166666666666666,
+          "ndcg5": 0.8693871637034519
+        }
+      }
+    },
+    {
+      "id": "vector",
+      "label": "仅哈希向量",
+      "mode": "vector",
+      "useSynonyms": false,
+      "total": {
+        "n": 63,
+        "hit1": 0.6666666666666666,
+        "hit3": 0.8412698412698413,
+        "hit5": 0.9047619047619048,
+        "mrr5": 0.7603174603174604,
+        "recall5": 0.812169312169312,
+        "ndcg5": 0.7388100508072364
+      },
+      "categories": {
+        "term": {
+          "n": 16,
+          "hit1": 1,
+          "hit3": 1,
+          "hit5": 1,
+          "mrr5": 1,
+          "recall5": 1,
+          "ndcg5": 0.992325957208628
+        },
+        "colloquial": {
+          "n": 15,
+          "hit1": 0.4,
+          "hit3": 0.4666666666666667,
+          "hit5": 0.6666666666666666,
+          "mrr5": 0.46888888888888897,
+          "recall5": 0.5,
+          "ndcg5": 0.4356933101731613
+        },
+        "paraphrase": {
+          "n": 16,
+          "hit1": 0.5,
+          "hit3": 1,
+          "hit5": 1,
+          "mrr5": 0.7395833333333334,
+          "recall5": 0.9375,
+          "ndcg5": 0.7730700281125975
+        },
+        "multi_risk": {
+          "n": 16,
+          "hit1": 0.75,
+          "hit3": 0.875,
+          "hit5": 0.9375,
+          "mrr5": 0.8145833333333333,
+          "recall5": 0.7916666666666667,
+          "ndcg5": 0.7352061114449286
+        }
+      }
+    },
+    {
+      "id": "hybrid_no_synonyms",
+      "label": "混合检索（无同义词）",
+      "mode": "hybrid",
+      "useSynonyms": false,
+      "total": {
+        "n": 63,
+        "hit1": 0.8571428571428571,
+        "hit3": 0.9841269841269841,
+        "hit5": 0.9841269841269841,
+        "mrr5": 0.9126984126984127,
+        "recall5": 0.933862433862434,
+        "ndcg5": 0.8873732915760382
+      },
+      "categories": {
+        "term": {
+          "n": 16,
+          "hit1": 1,
+          "hit3": 1,
+          "hit5": 1,
+          "mrr5": 1,
+          "recall5": 1,
+          "ndcg5": 0.9899650986435233
+        },
+        "colloquial": {
+          "n": 15,
+          "hit1": 0.6666666666666666,
+          "hit3": 0.9333333333333333,
+          "hit5": 0.9333333333333333,
+          "mrr5": 0.788888888888889,
+          "recall5": 0.8444444444444444,
+          "ndcg5": 0.7433300454521631
+        },
+        "paraphrase": {
+          "n": 16,
+          "hit1": 0.875,
+          "hit3": 1,
+          "hit5": 1,
+          "mrr5": 0.9270833333333333,
+          "recall5": 0.9375,
+          "ndcg5": 0.9056476567564692
+        },
+        "multi_risk": {
+          "n": 16,
+          "hit1": 0.875,
+          "hit3": 1,
+          "hit5": 1,
+          "mrr5": 0.9270833333333333,
+          "recall5": 0.9479166666666666,
+          "ndcg5": 0.9015476625692547
+        }
+      }
+    },
+    {
+      "id": "hybrid",
+      "label": "完整混合检索",
+      "mode": "hybrid",
+      "useSynonyms": true,
+      "total": {
+        "n": 63,
+        "hit1": 0.8888888888888888,
+        "hit3": 1,
+        "hit5": 1,
+        "mrr5": 0.9391534391534391,
+        "recall5": 0.955026455026455,
+        "ndcg5": 0.9102317292549682
+      },
+      "categories": {
+        "term": {
+          "n": 16,
+          "hit1": 1,
+          "hit3": 1,
+          "hit5": 1,
+          "mrr5": 1,
+          "recall5": 1,
+          "ndcg5": 0.9899650986435234
+        },
+        "colloquial": {
+          "n": 15,
+          "hit1": 0.8,
+          "hit3": 1,
+          "hit5": 1,
+          "mrr5": 0.888888888888889,
+          "recall5": 0.9333333333333333,
+          "ndcg5": 0.8378728223805397
+        },
+        "paraphrase": {
+          "n": 16,
+          "hit1": 0.875,
+          "hit3": 1,
+          "hit5": 1,
+          "mrr5": 0.9375,
+          "recall5": 0.9375,
+          "ndcg5": 0.9133216995478411
+        },
+        "multi_risk": {
+          "n": 16,
+          "hit1": 0.875,
+          "hit3": 1,
+          "hit5": 1,
+          "mrr5": 0.9270833333333333,
+          "recall5": 0.9479166666666666,
+          "ndcg5": 0.8952448647683167
+        }
+      }
+    }
+  ],
+  "incomplete": [
+    {
+      "category": "colloquial",
+      "query": "最近心里发慌，腿也肿，是不是药吃多了",
+      "found": [
+        "kb-heart-failure"
+      ],
+      "missing": [
+        "kb-hyperkalemia"
+      ],
+      "ranked": [
+        "kb-heart-failure",
+        "kb-digoxin-toxicity",
+        "kb-nsaid-renal",
+        "kb-diabetes-basics",
+        "kb-arrhythmia-drugs"
+      ]
+    },
+    {
+      "category": "colloquial",
+      "query": "老人吃安眠药后头晕差点摔倒",
+      "found": [
+        "kb-falls"
+      ],
+      "missing": [
+        "kb-beers-elderly"
+      ],
+      "ranked": [
+        "kb-falls",
+        "kb-hypertension-basics",
+        "kb-anticoag-bleeding",
+        "kb-hyperkalemia",
+        "kb-digoxin-toxicity"
+      ]
+    },
+    {
+      "category": "paraphrase",
+      "query": "便色变黑并伴牙龈渗血，长期口服抗凝药",
+      "found": [
+        "kb-anticoag-bleeding"
+      ],
+      "missing": [
+        "kb-antiplatelet"
+      ],
+      "ranked": [
+        "kb-antibiotics-interaction",
+        "kb-anticoag-bleeding",
+        "kb-nsaid-renal",
+        "kb-ppi",
+        "kb-nsaid-anticoag"
+      ]
+    },
+    {
+      "category": "paraphrase",
+      "query": "肾小球滤过率低于45的二甲双胍使用者管理",
+      "found": [
+        "kb-diabetes-basics"
+      ],
+      "missing": [
+        "kb-nsaid-renal"
+      ],
+      "ranked": [
+        "kb-diabetes-basics",
+        "kb-triple-whammy",
+        "kb-antibiotics-interaction",
+        "kb-beers-elderly",
+        "kb-falls"
+      ]
+    },
+    {
+      "category": "multi_risk",
+      "query": "家属买来钙片和抗生素，老人每次一起吞",
+      "found": [
+        "kb-antibiotics-interaction"
+      ],
+      "missing": [
+        "kb-med-reconciliation"
+      ],
+      "ranked": [
+        "kb-triple-whammy",
+        "kb-beers-elderly",
+        "kb-antibiotics-interaction",
+        "kb-anticoag-bleeding",
+        "kb-hyperkalemia"
+      ]
+    },
+    {
+      "category": "multi_risk",
+      "query": "心衰合并慢性肾病，呋塞米和止痛药一起吃后尿量变少",
+      "found": [
+        "kb-triple-whammy",
+        "kb-heart-failure"
+      ],
+      "missing": [
+        "kb-nsaid-renal"
+      ],
+      "ranked": [
+        "kb-triple-whammy",
+        "kb-heart-failure",
+        "kb-hyperkalemia",
+        "kb-nsaid-anticoag",
+        "kb-hypertension-basics"
+      ]
+    }
+  ]
+}

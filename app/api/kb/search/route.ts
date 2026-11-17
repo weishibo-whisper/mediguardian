@@ -1,4 +1,5 @@
 import { getKbStats, searchKb } from '@/lib/rag';
+import type { RetrievalMode } from '@/lib/types';
 
 /**
  * 检索调试接口
@@ -13,23 +14,37 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => ({}))) as { query?: string; topK?: number; docIds?: string[] };
+  const body = (await req.json().catch(() => ({}))) as {
+    query?: string;
+    topK?: number;
+    docIds?: string[];
+    mode?: RetrievalMode;
+    useSynonyms?: boolean;
+  };
   const query = body.query?.trim();
   if (!query) return Response.json({ error: 'query 不能为空', hits: [] }, { status: 400 });
+  const mode: RetrievalMode = ['hybrid', 'bm25', 'vector'].includes(body.mode ?? '')
+    ? body.mode as RetrievalMode
+    : 'hybrid';
 
   const hits = await searchKb(query, {
     topK: Math.min(Number(body.topK ?? 6), 12),
     docIds: body.docIds,
+    mode,
+    useSynonyms: body.useSynonyms !== false,
   });
 
   return Response.json({
     query,
+    mode,
+    useSynonyms: body.useSynonyms !== false,
     count: hits.length,
     hits: hits.map((h) => ({
       chunkId: h.chunkId,
       docId: h.docId,
       title: h.title,
       section: h.section,
+      source: h.source,
       score: h.score,
       scoreBreakdown: h.scoreBreakdown,
       snippet: h.text.replace(/^#+\s*/gm, '').slice(0, 160),

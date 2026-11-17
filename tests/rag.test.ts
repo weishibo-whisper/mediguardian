@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getKbStats, hitSnippet, searchKb, verifyCitations } from '@/lib/rag';
 import { embed, cosine, EMBED_DIM } from '@/lib/rag/embed';
+import { expandQuery } from '@/lib/rag/synonyms';
 import { normalize, tokenize } from '@/lib/rag/text';
 
 /**
@@ -52,6 +53,15 @@ describe('混合检索', () => {
     expect(hits[0].section.length).toBeGreaterThan(0);
     expect(hitSnippet(hits[0], 80).length).toBeLessThanOrEqual(83);
   });
+
+  it('常见口语变体「心里发慌、腿也肿」能在前五篇召回相关风险文档', async () => {
+    const query = '最近心里发慌，腿也肿，是不是药吃多了';
+    expect(expandQuery(query)).toContain('心悸');
+    expect(expandQuery(query)).toContain('水肿');
+    const hits = await searchKb(query, { topK: 12 });
+    const topDocs = [...new Set(hits.map((hit) => hit.docId))].slice(0, 5);
+    expect(topDocs.some((docId) => ['kb-heart-failure', 'kb-hyperkalemia'].includes(docId))).toBe(true);
+  });
 });
 
 describe('引用校验', () => {
@@ -61,6 +71,13 @@ describe('引用校验', () => {
     title: docId.toUpperCase(),
     section: '小节',
     tags: [] as string[],
+    source: {
+      docId,
+      authoredBy: 'fixture',
+      contentReviewStatus: 'unreviewed' as const,
+      contentReviewNote: 'test fixture',
+      references: [],
+    },
     text: '片段',
     score,
     scoreBreakdown: { bm25: score, vector: score, rrf: score, rerank: 0 },
@@ -75,8 +92,8 @@ describe('引用校验', () => {
   });
 
   it('越界编号被判为非法（幻觉守卫）', () => {
-    const r = verifyCitations('结论 [1] 与 [9]', hits);
-    expect(r.invalidIds).toContain(9);
+    const r = verifyCitations('结论 [1] 与 [999]', hits);
+    expect(r.invalidIds).toContain(999);
   });
 
   it('无引用时返回空集合而不是抛错', () => {

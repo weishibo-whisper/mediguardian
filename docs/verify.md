@@ -95,18 +95,19 @@ Route (app)                              Size  First Load JS
 
 ## 4. 检索质量（`npm run eval:rag`）
 
-探针分两类：术语型（医生问法）与口语型（老人/家属原话）。分开统计，避免平均值掩盖真实短板。
+截至 2026-11-05，检索评测集扩至 63 条项目自标注探针，覆盖术语、口语、改写、多风险四类；每条可标注多个相关文档。按文档去重后统计 Hit@1/3/5、MRR@5、Recall@5、nDCG@5，均为 macro average。
 
-| 探针类别 | 条数 | Hit@1 | Hit@3 | MRR |
-| --- | --- | --- | --- | --- |
-| 术语型 | 14 | 10（0.714） | 13（0.929） | 0.836 |
-| 口语型（同义词扩展开） | 7 | **5（0.714）** | 5（0.714） | **0.743** |
-| 口语型（扩展关，基线） | 7 | 3（**0.429**） | 5（0.714） | 0.524 |
-| 合计（开 / 关） | 21 | **0.714 / 0.619** | 0.857 / 0.857 | **0.805 / 0.732** |
+| 探针类别 | 条数 | Hit@1 | Hit@3 | MRR@5 | Recall@5 | nDCG@5 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 术语型 | 16 | 1.000 | 1.000 | 1.000 | 1.000 | 0.990 |
+| 口语型 | 15 | 0.800 | 1.000 | 0.889 | 0.933 | 0.838 |
+| 改写型 | 16 | 0.875 | 1.000 | 0.938 | 0.938 | 0.913 |
+| 多风险型 | 16 | 0.875 | 1.000 | 0.927 | 0.948 | 0.895 |
+| 合计 | 63 | 0.889 | 1.000 | 0.939 | 0.955 | 0.910 |
 
-复现基线：`RAG_SYNONYMS=off npm run eval:rag`（需重启服务让环境变量生效）。
+同次运行 Hit@5 四类及合计均为 1.000；但 6 条多相关查询没有找全所有标注文档。标注由项目作者完成，没有独立一致性检验，也不是临床验证。关闭同义词基线需在服务进程启动时设置 `RAG_SYNONYMS=off` 并重启后再从另一终端运行评测。
 
-**结论**：领域同义词扩展把口语提问的 Hit@1 从 0.429 提到 0.714，术语型指标一条未退——关键是分工：扩展词只进稠密路，BM25 仍只用原话。早期把扩展词也塞进 BM25 时，Hit@3 曾从 0.929 跌到 0.857，已回滚该做法。
+**结论**：一条口语查询暴露出“心里发慌、腿也肿”等变体不能触发精确子串映射，且零 BM25 分的候选仍被错误送入 RRF。已添加常见口语变体、停用“不是/是不”问句二元组、排除零分 BM25 名次，并增加受限同义词 BM25 补充路。修复后基准 Hit@3 为 1.000，Recall@5 为 0.955；是否保留这些自标注，仍应由独立标注者复核。
 
 术语型命中示例：
 
@@ -133,7 +134,7 @@ Route (app)                              Size  First Load JS
 ✓ tests/tools.test.ts  (16 tests)
 
 Test Files  3 passed (3)
-Tests       41 passed (41)
+Tests       41 passed (41)（2026-10-28 基线）
 ```
 
 覆盖策略：只测**纯函数与确定性契约**，不写"点一下按钮看有没有渲染"的脆弱测试。
@@ -155,15 +156,13 @@ CI：`.github/workflows/ci.yml` 在每次 push / PR 跑 `typecheck → lint → 
 ```
 桌面 1440 /          无异常 · 横向溢出 无 · 按钮 2 个  · root 16px
 桌面 1440 /console   无异常 · 横向溢出 无 · 按钮 17 个 · root 16px
-桌面 1440 /evidence      无异常 · 横向溢出 无 · 按钮 7 个  · root 16px
+桌面 1440 /evidence  无异常 · 横向溢出 无 · 按钮 10 个 · root 16px
 桌面 1440 /safety    无异常 · 横向溢出 无 · 按钮 2 个  · root 16px
-窄屏 1024 × 4 页面   无异常 · 横向溢出 无
-大字模式 /            root 18.5px
-大字模式 /console     root 18.5px
-大字模式 /evidence        root 18.5px
-大字模式 /safety      root 18.5px
+桌面 1440 /trace/...  无异常 · 横向溢出 无 · 按钮 2 个  · root 16px
+窄屏 1024 × 5 页面   无异常 · 横向溢出 无
+大字模式 × 5 页面    root 18.5px
 
-✓ 三个视口 × 四个页面：无运行时异常、无横向溢出、无缺失可访问名称
+✓ 桌面/窄屏/大字 × 5 个页面：无运行时异常、无横向溢出、无缺失可访问名称
 ```
 
 大字模式用例特意走真实路径：在首页点一次开关，然后逐页验证 `root font-size` 是否稳定在 18.5px（=`localStorage` 持久化 + rem 缩放同时成立）。审计脚本第一版用「手动改 DOM 属性」的方式测，被 `TopNav` 的挂载副作用按 `localStorage` 覆盖，得到的是假结论——这个坑本身就说明为什么 UI 断言要走真实交互路径。
@@ -298,5 +297,40 @@ dark  /  /console  /evidence  /safety    同上，两套主题独立测量
 1. `next build` 在本机偶发失败（`Invariant: no direct app page entry found for /_not-found`、`.nft.json` ENOENT），间隔重试即可通过；根因指向上层目录存在多余 `package-lock.json` 与杀软对 `.next` 的实时扫描，已通过 `outputFileTracingRoot` 固定工作区根目录缓解，正式构建前建议清理 `.next`。
 2. `next build` 与 `next dev` 共用 `.next` 时可能互相污染；切换前清理 `.next` 最稳。
 3. 首次 `npm run dev` 冷启动编译约 15–20 秒，之后热更新。
-4. 未配置视觉模型时，`/api/vision` 返回演示识别结果，并在 UI 上标注「演示模式」。
+4. 完全未配置外部模型时，`/api/vision` 返回显式标记的演示识别结果；只配置文本模型但没有兼容 `VISION_MODEL` 时返回 `VISION_MODEL_NOT_CONFIGURED`，不会把文本模型冒充为视觉模型。
 5. 未接入数据库；`logs/` 在只读部署（如 Serverless）下静默降级为内存轨迹（代码已 try/catch）。
+
+## 9. 增量验证（2026-11-05）
+
+本轮（2026-11-05）检索与安全改动后重新运行：`npm test` 共 56/56 通过；`npm run typecheck` 退出码 0；`npm run lint` 通过（Next.js 提示 `next lint` 将来弃用）；`npm run build` 成功，生成 12 条路由。安全回归为 11/11 红旗正例检出、11/11 明确否认/常规输入不误触发，另有 5 条输出守门断言。检索基准为 63 条自标注探针，Hit@1/3/5 = 0.889/1.000/1.000，MRR@5 = 0.939，Recall@5 = 0.955，nDCG@5 = 0.910；6 条多相关查询未找全全部标注文档。以上不是临床准确率或临床验证。
+
+## 10. 终验（2026-11-12）
+
+- `npm test`：72/72 通过，新增流式 Token 用量回传、多轮追问语境边界、历史 PII 脱敏和审计哈希链篡改检测回归。
+- `npm run typecheck`：退出码 0。
+- `npm run build`：生产构建成功，12 条路由生成完成；`/console` 首次加载 JS 129 kB。
+- `npm run smoke`：4/4 通过。新增“上轮黑便/牙龈出血 → 本轮追问那我先做什么”用例，实测仍为 `forceReferral: true`，轨迹包含“已结合上一轮用户问题”，流式内容与守门后最终回答一致。
+- `npm run audit:ui`、`npm run audit:review`、`npm run audit:style`：双主题主要页面无运行时异常、无横向溢出、无对比度失败、无缺失焦点环、无小于 24px 点击区，320px 视口可重排；无毛玻璃、模糊装饰、大圆角或浮起投影违规。
+- `npm run shots`：10 张页面与回答态截图全部生成，覆盖落地页、诊台、红旗回答、冲突图谱、依据、安全审计、轨迹回放和大字模式。
+- 审计哈希链：新增 3 条纯函数回归，覆盖连续链、旧日志前缀迁移和篡改检测；实跑结果为 `valid`，链式记录 4/4 通过，旧格式 59 条已作为受保护前缀纳入首条链式记录。
+- 外部验证工具：`npm run eval:llm` 当前如实报告 `not_configured`（实际 LLM 0/3，降级率 1.000，因 `LLM_PROVIDER=mock`）；`npm run eval:vision` 因无真实图片清单报告“未评测”；`npm run review:export` 导出 49 条药师待复核项。
+- 界面复核覆盖已扩展到 `/`、`/console`、`/evidence`、`/safety` 与最近一次 `/trace/[runId]`：双主题对比度、焦点环、24px 点击区和 320px 重排均为 0 项失败；审计脚本现在发现任一失败会返回非零退出。
+
+说明：开发服务器与 `next build` 不应同时写 `.next`。本轮验证曾因此出现开发缓存混合，重启开发服务器后完整截图与页面审计均恢复通过；生产构建本身未失败。
+
+## 11. 真实模型与开放图片增量终验（2026-11-16）
+
+- 文本模型路径：DeepSeek `deepseek-chat` 连续 3 轮、共 9 次发起 LLM 模式，工程链路 9/9 完成，平均墙钟耗时 1627 ms；但 9 次规划请求均出现 `fetch failed` 并切换到规则引擎，最终 LLM 0/9、模式降级率 1.000。该结果只证明降级可靠，不计作真实模型成功；由于没有最终 LLM 运行，Token usage 覆盖为 0/0、总量为 `null`。
+- 视觉数据：从 Wikimedia Commons 核验并缓存 4 张公共领域或 CC BY-SA 4.0 原图，运行 `npm run eval:vision:build` 生成 36 张确定性增强样本。全部 JPEG 可解码，最大 227300 bytes；来源、作者、许可和原图 SHA-256 均进入清单。增强样本不计作 36 张独立照片。
+- 视觉能力边界：DeepSeek 文本预设不再回退为视觉模型。以 `VISION_EVAL_LIMIT=1` 执行探针，结果为 `vision_model_not_configured`、真实视觉样本 0/1，且脚本没有继续批量调用；当前不报告视觉准确率。
+- 药师复核：`npm run review:export` 导出 49 条待复核项，新增 `priority`，急诊红旗为 1、高风险和 urgent 为 2、其余依次后排；所有签字字段仍为空。
+- 用户试用：新增匿名任务表、SUS 表、执行说明和 `npm run study:summary`。空模板实测输出 `awaiting_real_participants`，参与者 0、完成任务 0、SUS 0，未生成虚构结果。
+- 终验：`npm test` 74/74、`npm run typecheck` 0 错误、`npm run lint` 0 警告/错误、`npm run build` 成功、最终 `npm run smoke` 4/4；冒烟现在逐例断言 `run_start: llm → done: mock` 与降级 note 一致。`npm run audit:verify` 为 `valid`（链式记录 29/29，旧格式前缀 59）。
+
+## 12. 充值后真实 LLM 终验（2026-11-17）
+
+- 本地 `.env.local` 更新后重启生产服务，`LLM_PROVIDER=deepseek`，密钥未进入 Git。
+- `npm run eval:llm` 最新一轮 3/3 通过：`startedMode=llm`、`finalMode=llm`，无规划或生成降级 note；模型为 `deepseek-chat`。
+- 最新一轮平均墙钟耗时 12322 ms，Token usage 覆盖 3/3，合计 12844 tokens；该指标是工程链路观测，不是临床准确率。
+- 历史 4 轮汇总共 12 次：前 9 次受网络/鉴权状态影响而降级，最新 3 次真实 LLM 成功；原始结果保存于 `data/eval/llm-results-round-4.json`，汇总保存于 `data/eval/llm-results-summary.json`。
+- 录制视频可以使用真实 LLM 口径；录制前应再次查看 `finalMode`，若出现 `mock` 或降级 note，立即切换为透明降级话术。

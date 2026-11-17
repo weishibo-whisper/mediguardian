@@ -81,6 +81,24 @@ export interface RedFlagRule {
 }
 
 /** 知识库分块 */
+export interface KbReference {
+  title: string;
+  organization: string;
+  year: number;
+  doi: string;
+  url: string;
+  metadataStatus: 'crossref-verified';
+  mappingStatus: 'candidate-unreviewed';
+}
+
+export interface KbSourceRecord {
+  docId: string;
+  authoredBy: string;
+  contentReviewStatus: 'unreviewed';
+  contentReviewNote: string;
+  references: KbReference[];
+}
+
 export interface KbChunk {
   /** 形如 kb-beers-elderly#2，可直接作为引用编号来源 */
   id: string;
@@ -88,6 +106,7 @@ export interface KbChunk {
   title: string;
   section: string;
   tags: string[];
+  source: KbSourceRecord;
   text: string;
   /** 词频表，用于 BM25 */
   tf: Record<string, number>;
@@ -103,6 +122,7 @@ export interface KbHit {
   title: string;
   section: string;
   tags: string[];
+  source: KbSourceRecord;
   text: string;
   /** 融合后的最终得分 0~1 */
   score: number;
@@ -115,12 +135,19 @@ export interface KbHit {
   };
 }
 
+/** 检索消融模式：用于证明混合检索各组件的实际增益 */
+export type RetrievalMode = 'hybrid' | 'bm25' | 'vector';
+
 /** 检索请求参数 */
 export interface SearchOptions {
   topK?: number;
   /** 限定检索的文档 id，用于「命中规则后精确取证据」 */
   docIds?: string[];
   minScore?: number;
+  /** 默认 hybrid；bm25/vector 仅用于评测与调试，不用于 Agent 主流程 */
+  mode?: RetrievalMode;
+  /** 默认开启；消融评测可以显式关闭领域同义词扩展 */
+  useSynonyms?: boolean;
 }
 
 /** 患者用药的「已补全视图」（药物信息 + 患者用法），供 UI 与 Agent 共用 */
@@ -201,6 +228,29 @@ export interface ToolCallRecord {
   data?: unknown;
 }
 
+/** 输出可信度自检：把“为什么可信/哪里仍不确定”变成可审计结构，而非只给一个黑盒分数 */
+export type VerificationStatus = 'pass' | 'caution' | 'fail';
+
+export interface VerificationCheck {
+  id: 'citations' | 'risk_coverage' | 'traceability' | 'professional_review';
+  label: string;
+  status: VerificationStatus;
+  detail: string;
+}
+
+export interface VerificationReport {
+  status: VerificationStatus;
+  /** 工程可信度分，衡量引用与证据链完整性；不是临床准确率 */
+  score: number;
+  validCitationCount: number;
+  invalidCitationIds: number[];
+  supportedFindingCount: number;
+  totalFindingCount: number;
+  traceableCitationCount: number;
+  reviewedCitationCount: number;
+  checks: VerificationCheck[];
+}
+
 /** 一次 Agent 运行的完整轨迹 */
 export interface AgentRun {
   id: string;
@@ -217,6 +267,7 @@ export interface AgentRun {
   safety: SafetyReport;
   answer: string;
   confidence: number;
+  verification?: VerificationReport;
   tokenUsage?: { prompt: number; completion: number };
 }
 
@@ -240,10 +291,24 @@ export type SseEvent =
       data?: unknown;
     }
   | { type: 'token'; text: string }
+  | { type: 'answer_final'; text: string }
   | { type: 'safety'; level: SafetyLevel; flags: SafetyFlag[]; forceReferral: boolean }
-  | { type: 'answer_meta'; citations: string[]; confidence: number; disclaimer: string }
+  | {
+      type: 'answer_meta';
+      citations: string[];
+      confidence: number;
+      disclaimer: string;
+      verification: VerificationReport;
+    }
   | { type: 'note'; text: string; level?: 'info' | 'warn' }
-  | { type: 'done'; runId: string; durationMs: number; tokenUsage?: { prompt: number; completion: number } }
+  | {
+      type: 'done';
+      runId: string;
+      durationMs: number;
+      mode: AgentRun['mode'];
+      model: string;
+      tokenUsage?: { prompt: number; completion: number };
+    }
   | { type: 'error'; message: string };
 
 /** 对话消息（前端状态） */
@@ -255,6 +320,13 @@ export interface ChatMessage {
   citations?: string[];
   safety?: SafetyReport;
   confidence?: number;
+  verification?: VerificationReport;
   streaming?: boolean;
   runId?: string;
+}
+
+/** 发送给 Agent 的受限对话历史（只携带文本，不携带 UI 状态） */
+export interface ConversationTurn {
+  role: 'user' | 'assistant';
+  content: string;
 }

@@ -33,6 +33,52 @@ interface SpeechRecognitionLike {
 }
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
+interface VisionItem {
+  name: string;
+  dose?: string;
+  freq?: string;
+  matchedDrugId: string | null;
+  matchedName: string | null;
+  confidence: number;
+  selected: boolean;
+}
+
+interface VisionResult {
+  items: VisionItem[];
+  provider: string;
+  note?: string;
+}
+
+async function prepareVisionImage(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('浏览器无法处理图片');
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    for (const quality of [0.82, 0.68, 0.54]) {
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+      if (!blob) continue;
+      if (blob.size > 1_500_000) continue;
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error('图片读取失败'));
+        reader.readAsDataURL(blob);
+      });
+    }
+    throw new Error('图片压缩后仍超过 1.5MB，请裁剪后重试');
+  } finally {
+    bitmap.close();
+  }
+}
+
 const QUICK_PROMPTS = [
   '最近牙龈出血、大便发黑，是不是止痛药引起的？',
   '这些药一起吃安全吗？我把药盒都带来了',
@@ -50,7 +96,7 @@ export function ChatPanel({
   const { messages, live, ask, reset } = useConsoleStore();
   const [input, setInput] = useState('');
   const [listening, setListening] = useState(false);
-  const [vision, setVision] = useState<{ items: Array<{ name: string; matchedName: string | null; confidence: number }>; provider: string; note?: string } | null>(null);
+  const [vision, setVision] = useState<VisionResult | null>(null);
   const [visionLoading, setVisionLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -102,36 +148,51 @@ export function ChatPanel({
 
   /* ---------------- 药盒拍照识别 ---------------- */
   const onPickImage = async (file: File) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setVision({ items: [], provider: 'error', note: '请上传 JPEG、PNG 或 WebP 格式图片' });
+      return;
+    }
     if (file.size > 4 * 1024 * 1024) {
       setVision({ items: [], provider: 'error', note: '图片超过 4MB，请压缩后重试' });
       return;
     }
+    const confirmed = window.confirm(
+      '图片会上传到守药人服务端；配置真实视觉模型时，还会转发到你选择的模型服务识别。本机将缩小并重编码图片以移除元数据。请先遮盖姓名、证件号和病历号等信息。继续吗？',
+    );
+    if (!confirmed) return;
+
     setVisionLoading(true);
     try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const dataUrl = await prepareVisionImage(file);
       const res = await fetch('/api/vision', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: dataUrl, hint: `患者：${bundle.patient.name}，${bundle.patient.age} 岁` }),
+        body: JSON.stringify({ image: dataUrl }),
       });
       const data = (await res.json()) as {
-        items?: Array<{ name: string; matchedName: string | null; confidence: number }>;
+        items?: Array<{
+          name: string;
+          dose?: string;
+          freq?: string;
+          matchedDrugId: string | null;
+          matchedName: string | null;
+          confidence: number;
+        }>;
         provider?: string;
         note?: string;
         error?: string;
       };
       setVision({
-        items: data.items ?? [],
+        items: (data.items ?? []).map((item) => ({ ...item, selected: false })),
         provider: data.provider ?? 'unknown',
         note: data.error ?? data.note,
       });
-    } catch {
-      setVision({ items: [], provider: 'error', note: '识别请求失败，请重试' });
+    } catch (error) {
+      setVision({
+        items: [],
+        provider: 'error',
+        note: error instanceof Error ? error.message : '识别请求失败，请重试',
+      });
     } finally {
       setVisionLoading(false);
     }
@@ -152,6 +213,7 @@ export function ChatPanel({
   };
 
   const forceReferral = live.safety?.forceReferral;
+  const selectedVisionItems = vision?.items.filter((item) => item.selected && item.matchedDrugId) ?? [];
 
   return (
     <section className="card flex min-h-[calc(100vh-7rem)] flex-col overflow-hidden">
@@ -174,7 +236,7 @@ export function ChatPanel({
             <Sparkles size={10} />
             {live.mode === 'llm' ? '大模型引擎' : '规则引擎'}
           </Badge>
-          <button type="button" onClick={reset} className="btn-ghost !px-2 !py-1.5" title="清空对话">
+          <button type="button" onClick={reset} className="btn-ghost !px-2 !py-1.5" title="清空对话" aria-label="清空对话">
             <RotateCcw size={13} />
           </button>
         </div>
@@ -313,28 +375,58 @@ export function ChatPanel({
           </div>
           {vision.items.length > 0 ? (
             <>
-              <ul className="mt-1 flex flex-wrap gap-1.5">
+              <p className="mt-1 text-[10px] leading-relaxed text-ink-mute">
+                请逐项核对。只有已匹配且经你确认的药物会进入相互作用核查。
+              </p>
+              <ul className="mt-2 space-y-1.5">
                 {vision.items.map((item, i) => (
-                  <li key={i} className="chip border-line bg-surface">
-                    {item.name}
-                    {item.matchedName ? (
-                      <span className="text-ok">→ {item.matchedName}</span>
-                    ) : (
-                      <span className="text-warn">未匹配</span>
-                    )}
+                  <li key={`${item.name}-${i}`} className="flex min-h-10 items-center gap-2 rounded-md border border-line bg-surface px-2 py-1.5">
+                    <input
+                      type="checkbox"
+                      checked={item.selected}
+                      disabled={!item.matchedDrugId}
+                      onChange={(event) => {
+                        const selected = event.target.checked;
+                        setVision((current) => current ? {
+                          ...current,
+                          items: current.items.map((candidate, index) => index === i ? { ...candidate, selected } : candidate),
+                        } : current);
+                      }}
+                      aria-label={`确认药物 ${item.matchedName ?? item.name}`}
+                      className="h-4 w-4 shrink-0 accent-[rgb(var(--accent-solid))]"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-ink">{item.name}</p>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[10px] text-ink-mute">
+                        {item.matchedName ? (
+                          <span className="text-ok">匹配：{item.matchedName}</span>
+                        ) : (
+                          <span className="text-warn">未匹配本地药物库，已阻止加入</span>
+                        )}
+                        {item.dose ? <span>{item.dose}</span> : null}
+                        {item.freq ? <span>{item.freq}</span> : null}
+                      </p>
+                    </div>
+                    <span className={cn(
+                      'tnum shrink-0 font-mono text-[10px]',
+                      item.confidence >= 0.8 ? 'text-ok' : item.confidence >= 0.6 ? 'text-warn' : 'text-danger',
+                    )}>
+                      {Math.round(item.confidence * 100)}%
+                    </span>
                   </li>
                 ))}
               </ul>
               <button
                 type="button"
+                disabled={selectedVisionItems.length === 0}
                 onClick={() => {
-                  const names = vision.items.map((i) => i.matchedName ?? i.name).join('、');
-                  ask(`我刚拍了药盒，识别到这些药：${names}。请把它们一起纳入相互作用核对。`);
+                  const names = selectedVisionItems.map((item) => item.matchedName).join('、');
+                  ask(`我已人工核对药盒识别结果，确认这些药物：${names}。请把它们一起纳入相互作用核对。`);
                   setVision(null);
                 }}
-                className="mt-1.5 text-accent-text underline-offset-2 hover:underline"
+                className="btn-primary mt-2 !min-h-9 !px-3 disabled:no-underline"
               >
-                把它们加入本次核对 →
+                确认并加入 {selectedVisionItems.length} 种药物
               </button>
             </>
           ) : null}
@@ -362,6 +454,7 @@ export function ChatPanel({
               onClick={toggleVoice}
               className={cn('btn-ghost !px-2', listening && 'border-danger/30 bg-danger/10 text-danger')}
               title={listening ? '停止语音输入' : '语音输入'}
+              aria-label={listening ? '停止语音输入' : '语音输入'}
               aria-pressed={listening}
             >
               {listening ? <Square size={14} /> : <Mic size={14} />}
@@ -371,6 +464,7 @@ export function ChatPanel({
               onClick={() => fileRef.current?.click()}
               className="btn-ghost !px-2"
               title="拍摄药盒 / 上传处方"
+              aria-label="拍摄药盒或上传处方"
               disabled={visionLoading}
             >
               {visionLoading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
@@ -378,7 +472,7 @@ export function ChatPanel({
             <input
               ref={fileRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];

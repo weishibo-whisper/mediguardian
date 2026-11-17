@@ -64,7 +64,7 @@ export default async function TracePage({ params }: { params: Promise<{ runId: s
 
       <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
         {/* 左侧：步骤 + 工具 */}
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <section className="card p-3.5">
             <SectionTitle title="执行步骤" desc={`${run.steps.length} 步`} />
             <ol className="mt-2 space-y-1.5">
@@ -120,7 +120,7 @@ export default async function TracePage({ params }: { params: Promise<{ runId: s
         </div>
 
         {/* 右侧：证据 + 回答 */}
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <section className="card p-4">
             <SectionTitle title="最终回答" desc="与用户看到的完全一致（含引用徽标）" />
             <div className="mt-2">

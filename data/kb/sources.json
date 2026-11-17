@@ -1,0 +1,299 @@
+[
+  {
+    "docId": "kb-antibiotics-interaction",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "尚未登记可逐条对应的原始来源；不得用于临床决策。",
+    "references": []
+  },
+  {
+    "docId": "kb-anticoag-bleeding",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选指南用于背景核对；INR 阈值、处置与随访间隔尚未映射到具体原文段落。",
+    "references": [
+      {
+        "title": "2023 ACC/AHA/ACCP/HRS Guideline for the Diagnosis and Management of Atrial Fibrillation",
+        "organization": "ACC / AHA / ACCP / HRS",
+        "year": 2024,
+        "doi": "10.1161/CIR.0000000000001193",
+        "url": "https://doi.org/10.1161/cir.0000000000001193",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-antiplatelet",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选研究涉及氯吡格雷与奥美拉唑；不代表该研究覆盖本条目全部联用与胃保护建议。",
+    "references": [
+      {
+        "title": "Clopidogrel with or without Omeprazole in Coronary Artery Disease",
+        "organization": "New England Journal of Medicine",
+        "year": 2010,
+        "doi": "10.1056/NEJMoa1007964",
+        "url": "https://doi.org/10.1056/NEJMoa1007964",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-arrhythmia-drugs",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选指南用于药物相互作用背景核对；胺碘酮监测项目尚未逐项映射。",
+    "references": [
+      {
+        "title": "2023 ACC/AHA/ACCP/HRS Guideline for the Diagnosis and Management of Atrial Fibrillation",
+        "organization": "ACC / AHA / ACCP / HRS",
+        "year": 2024,
+        "doi": "10.1161/CIR.0000000000001193",
+        "url": "https://doi.org/10.1161/cir.0000000000001193",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-beers-elderly",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选来源的书目元数据已核验；Beers 条目、药物分类与中国适用性仍须专业人员逐条复核。",
+    "references": [
+      {
+        "title": "American Geriatrics Society 2023 updated AGS Beers Criteria for potentially inappropriate medication use in older adults",
+        "organization": "American Geriatrics Society",
+        "year": 2023,
+        "doi": "10.1111/jgs.18372",
+        "url": "https://doi.org/10.1111/jgs.18372",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-diabetes-basics",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选 ADA 标准的书目元数据已核验；不同适应证、eGFR 阈值和目标值仍未做段落级对应。",
+    "references": [
+      {
+        "title": "11. Chronic Kidney Disease and Risk Management: Standards of Care in Diabetes—2025",
+        "organization": "American Diabetes Association",
+        "year": 2024,
+        "doi": "10.2337/dc25-s011",
+        "url": "https://doi.org/10.2337/dc25-s011",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      },
+      {
+        "title": "13. Older Adults: Standards of Care in Diabetes—2025",
+        "organization": "American Diabetes Association",
+        "year": 2024,
+        "doi": "10.2337/dc25-s013",
+        "url": "https://doi.org/10.2337/dc25-s013",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-digoxin-toxicity",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选共识与综述的书目元数据已核验；诊断和处置条目尚未逐段复核。",
+    "references": [
+      {
+        "title": "Diagnosis and practical management of digoxin toxicity: a narrative review and consensus",
+        "organization": "European Journal of Emergency Medicine",
+        "year": 2023,
+        "doi": "10.1097/MEJ.0000000000001065",
+        "url": "https://doi.org/10.1097/mej.0000000000001065",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-falls",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选 Beers 来源只用于风险类别背景核对；本条目全部干预建议尚未复核。",
+    "references": [
+      {
+        "title": "American Geriatrics Society 2023 updated AGS Beers Criteria for potentially inappropriate medication use in older adults",
+        "organization": "American Geriatrics Society",
+        "year": 2023,
+        "doi": "10.1111/jgs.18372",
+        "url": "https://doi.org/10.1111/jgs.18372",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-heart-failure",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选指南的书目元数据已核验；本地化治疗框架、阈值与随访频次尚未逐项核对。",
+    "references": [
+      {
+        "title": "2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure",
+        "organization": "AHA / ACC / HFSA",
+        "year": 2022,
+        "doi": "10.1161/CIR.0000000000001063",
+        "url": "https://doi.org/10.1161/cir.0000000000001063",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-hyperkalemia",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选 CKD 指南用于背景核对；高钾具体阈值、停药与复查节奏尚未逐条映射。",
+    "references": [
+      {
+        "title": "KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of Chronic Kidney Disease",
+        "organization": "KDIGO",
+        "year": 2024,
+        "doi": "10.1016/j.kint.2023.10.018",
+        "url": "https://doi.org/10.1016/j.kint.2023.10.018",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-hypertension-basics",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "该 2017 指南的出版元数据为 2018 年；血压目标及中国老年人适用性尚待专业复核。",
+    "references": [
+      {
+        "title": "2017 ACC/AHA Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure in Adults",
+        "organization": "ACC / AHA",
+        "year": 2018,
+        "doi": "10.1161/HYP.0000000000000065",
+        "url": "https://doi.org/10.1161/hyp.0000000000000065",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-med-reconciliation",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选文献涉及护理转衔中的用药安全；本项目流程步骤和质量指标尚未逐条对应。",
+    "references": [
+      {
+        "title": "Improving medication safety during hospital-based transitions of care",
+        "organization": "Cleveland Clinic Journal of Medicine",
+        "year": 2015,
+        "doi": "10.3949/ccjm.82a.14025",
+        "url": "https://doi.org/10.3949/ccjm.82a.14025",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-nsaid-anticoag",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选研究题目涉及 coumarin 与 NSAID 联用出血风险；替代药选择及监测建议不由该书目链接自动证明。",
+    "references": [
+      {
+        "title": "Concomitant Coumarin–NSAID Therapy and Risk for Bleeding",
+        "organization": "The Annals of Pharmacotherapy",
+        "year": 2003,
+        "doi": "10.1345/aph.1c157",
+        "url": "https://doi.org/10.1345/aph.1c157",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-nsaid-renal",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选指南用于肾病风险背景；NSAID 的 eGFR 分层、替代方案与具体阈值尚未逐条核对。",
+    "references": [
+      {
+        "title": "KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of Chronic Kidney Disease",
+        "organization": "KDIGO",
+        "year": 2024,
+        "doi": "10.1016/j.kint.2023.10.018",
+        "url": "https://doi.org/10.1016/j.kint.2023.10.018",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      },
+      {
+        "title": "American Geriatrics Society 2023 updated AGS Beers Criteria for potentially inappropriate medication use in older adults",
+        "organization": "American Geriatrics Society",
+        "year": 2023,
+        "doi": "10.1111/jgs.18372",
+        "url": "https://doi.org/10.1111/jgs.18372",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-ppi",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选研究涉及氯吡格雷与奥美拉唑；长期 PPI 风险及用药建议尚未逐条复核。",
+    "references": [
+      {
+        "title": "Clopidogrel with or without Omeprazole in Coronary Artery Disease",
+        "organization": "New England Journal of Medicine",
+        "year": 2010,
+        "doi": "10.1056/NEJMoa1007964",
+        "url": "https://doi.org/10.1056/NEJMoa1007964",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-statin-muscle",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选共识涉及他汀不耐受；症状识别、停药与再挑战路径尚未逐项映射。",
+    "references": [
+      {
+        "title": "NLA scientific statement on statin intolerance: a new definition and key considerations for ASCVD risk reduction in the statin intolerant patient",
+        "organization": "National Lipid Association",
+        "year": 2022,
+        "doi": "10.1016/j.jacl.2022.05.068",
+        "url": "https://doi.org/10.1016/j.jacl.2022.05.068",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  },
+  {
+    "docId": "kb-triple-whammy",
+    "authoredBy": "守药人团队整理（演示稿）",
+    "contentReviewStatus": "unreviewed",
+    "contentReviewNote": "候选观察性研究涉及三联用药与急性肾损伤关联；研究结论不等于个体化处置建议。",
+    "references": [
+      {
+        "title": "Concurrent use of diuretics, angiotensin converting enzyme inhibitors, and angiotensin receptor blockers with non-steroidal anti-inflammatory drugs and risk of acute kidney injury: nested case-control study",
+        "organization": "BMJ",
+        "year": 2013,
+        "doi": "10.1136/bmj.e8525",
+        "url": "https://doi.org/10.1136/bmj.e8525",
+        "metadataStatus": "crossref-verified",
+        "mappingStatus": "candidate-unreviewed"
+      }
+    ]
+  }
+]

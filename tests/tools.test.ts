@@ -136,6 +136,15 @@ describe('工具契约', () => {
     expect(plan.followUp[0].items.length).toBeGreaterThan(0);
   });
 
+  it('用药重整只允许直接停止自行加服药，处方药调整必须交给医生', async () => {
+    const out = await TOOLS.build_med_plan.run({}, ctx1);
+    const plan = (out.data as { plan: MedPlan }).plan;
+    expect(plan.stop.some((item) => item.name.includes('布洛芬'))).toBe(true);
+    expect(plan.stop.some((item) => /华法林|阿司匹林|二甲双胍|格列本脲/.test(item.name))).toBe(false);
+    const aspirin = plan.adjust.find((item) => item.name.includes('阿司匹林'));
+    expect(aspirin?.reason).toMatch(/医生.*决定/);
+  });
+
   it('lab_assess 返回结构化发现与摘要', async () => {
     const out = await TOOLS.lab_assess.run({}, ctx1);
     expect(out.summary.length).toBeGreaterThan(0);

@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import type { KbHit, Patient, RedFlagRule, SafetyFlag, SafetyReport } from '@/lib/types';
 import { getRedFlags } from '@/lib/data';
 
@@ -60,7 +61,28 @@ export function maskPii(text: string): { text: string; found: string[] } {
 
 /** 红旗症状匹配（多关键词命中取最高等级） */
 export function detectRedFlags(text: string, rules: RedFlagRule[]) {
-  const matched = rules.filter((r) => r.keywords.some((k) => text.includes(k)));
+  const isExplicitlyNegated = (start: number, end: number) => {
+    const before = text.slice(Math.max(0, start - 24), start);
+    const after = text.slice(end, end + 12);
+    const negation = /(?:没有|未见|否认|不伴(?:有)?|无|并无|未出现|从未|未曾)(?:出现|发生|冒|手抖|肢体无力|明显|任何|当前)?\s*$/;
+    const beforeMatch = before.match(negation);
+    if (beforeMatch) {
+      const prefix = before.slice(0, beforeMatch.index);
+      if (!/(?:不是|并非|并不是|不能排除)\s*$/.test(prefix)) return true;
+    }
+    return /^\s*(?:没有|未见|否认|不伴(?:有)?|无|并无|不存在|已经消失|已缓解)/.test(after);
+  };
+
+  const matched = rules.filter((rule) => rule.keywords.some((keyword) => {
+    let from = 0;
+    while (from < text.length) {
+      const index = text.indexOf(keyword, from);
+      if (index < 0) return false;
+      if (!isExplicitlyNegated(index, index + keyword.length)) return true;
+      from = index + keyword.length;
+    }
+    return false;
+  }));
   const emergency = matched.filter((r) => r.level === 'emergency');
   return { matched, hasEmergency: emergency.length > 0 };
 }
@@ -80,7 +102,7 @@ export async function screenInput(text: string, patient?: Patient): Promise<Safe
       category: 'pii',
       level: 'info',
       title: '已自动脱敏个人信息',
-      detail: `检测到 ${found.join('、')}，已在发送给模型前完成掩码处理，原文不会离开浏览器会话。`,
+      detail: `检测到 ${found.join('、')}；若启用外部模型，本应用会先在服务端掩码该字段。原文已提交至本应用服务端，请勿在图片或其他字段中填写额外敏感信息。`,
       action: '仅以脱敏文本参与推理',
     });
   }
@@ -120,6 +142,23 @@ export async function screenInput(text: string, patient?: Patient): Promise<Safe
   };
 }
 
+/** 红旗命中时，模型回答缺少紧急处置提示则由确定性规则补到最前。 */
+export function enforceReferralPriority(
+  answer: string,
+  report: Pick<SafetyReport, 'forceReferral' | 'flags'>,
+): string {
+  const opening = answer.replace(/^#{1,3}\s+[^\n]+\n+/, '').replace(/^\*+/, '').trimStart();
+  if (
+    !report.forceReferral ||
+    /^(?:先别在家观察|立即就医|立即拨打\s*120|请立即就医|请立即拨打\s*120)/.test(opening)
+  ) {
+    return answer;
+  }
+  const flag = report.flags.find((item) => item.category === 'redflag');
+  const title = flag?.title ?? '危险信号';
+  return `### 紧急处置\n\n**检测到${title}。请立即拨打 120 或前往急诊，不要等待线上用药建议。**\n\n${answer}`;
+}
+
 /** 输出侧守卫：诊断断言 / 绝对化 / 无引用剂量 / 超范围处置 */
 export function guardOutput(answer: string, hits: KbHit[], mode: 'strict' | 'balanced' = 'strict') {
   const flags: SafetyFlag[] = [];
@@ -143,6 +182,41 @@ export function guardOutput(answer: string, hits: KbHit[], mode: 'strict' | 'bal
       });
       text = text.replace(regex, '可能涉及');
     }
+  }
+
+  const medicationActionLines = text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter((line) => /(?:停用|暂停|减量|加量|增量|改用|换用|加用)/.test(line))
+    .filter((line) => !/(?:医生|医师|医嘱|急诊|就医|核定|讨论|评估|不要自行|不得自行|不能自行)/.test(line));
+  if (medicationActionLines.length > 0) {
+    flags.push({
+      id: 'guard-medication-action-scope',
+      category: 'scope',
+      level: mode === 'strict' ? 'critical' : 'warn',
+      title: '处方调整缺少医生确认边界',
+      detail: `检测到 ${medicationActionLines.length} 处停药、减量或换药动作未说明由执业医师确认。`,
+      action: '已追加“不要自行调整处方药”安全边界',
+    });
+    text += '\n\n> 上述涉及停用、暂停、减量或换药的内容，均须由执业医师结合现场评估确认；请勿自行调整处方药。';
+  }
+
+  const invalidCitations = new Set<number>();
+  text = text.replace(/\[(\d+)\]/g, (citation, rawIndex: string) => {
+    const index = Number(rawIndex);
+    if (index >= 1 && index <= hits.length) return citation;
+    invalidCitations.add(index);
+    return '';
+  });
+  if (invalidCitations.size > 0) {
+    flags.push({
+      id: 'guard-invalid-citations',
+      category: 'citation',
+      level: 'warn',
+      title: '引用编号无效',
+      detail: `回答中的引用编号 ${Array.from(invalidCitations).join('、')} 不对应本轮检索结果，已移除。`,
+      action: '仅展示可对应到本轮检索结果的引用',
+    });
   }
 
   const hasDose = /\d+(\.\d+)?\s*(mg|毫克|g|克|μg|微克|ml|毫升)/.test(text);
@@ -198,15 +272,139 @@ export interface AuditEntry {
   citations: string[];
   durationMs: number;
   confidence: number;
+  chainVersion?: 1;
+  prevHash?: string;
+  entryHash?: string;
 }
 
-export async function appendAudit(entry: AuditEntry): Promise<void> {
+export interface AuditChainReport {
+  status: 'empty' | 'legacy' | 'valid' | 'broken';
+  totalLines: number;
+  legacyLines: number;
+  chainedLines: number;
+  verifiedLines: number;
+  firstBrokenLine?: number;
+}
+
+const GENESIS_HASH = 'GENESIS';
+const hashText = (text: string) => createHash('sha256').update(text, 'utf8').digest('hex');
+const nonEmptyLines = (raw: string) => raw.split(/\r?\n/).filter((line) => line.trim().length > 0);
+
+export function verifyAuditLines(lines: string[]): AuditChainReport {
+  if (lines.length === 0) {
+    return { status: 'empty', totalLines: 0, legacyLines: 0, chainedLines: 0, verifiedLines: 0 };
+  }
+
+  const legacyPrefix: string[] = [];
+  let previousRaw = '';
+  let chainedLines = 0;
+  let verifiedLines = 0;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const raw = lines[index];
+    let parsed: AuditEntry;
+    try {
+      parsed = JSON.parse(raw) as AuditEntry;
+    } catch {
+      return {
+        status: 'broken',
+        totalLines: lines.length,
+        legacyLines: legacyPrefix.length,
+        chainedLines,
+        verifiedLines,
+        firstBrokenLine: index + 1,
+      };
+    }
+
+    if (!parsed.entryHash || !parsed.prevHash || parsed.chainVersion !== 1) {
+      if (chainedLines > 0) {
+        return {
+          status: 'broken',
+          totalLines: lines.length,
+          legacyLines: legacyPrefix.length,
+          chainedLines,
+          verifiedLines,
+          firstBrokenLine: index + 1,
+        };
+      }
+      legacyPrefix.push(raw);
+      previousRaw = raw;
+      continue;
+    }
+
+    const expectedPrev = chainedLines === 0
+      ? (legacyPrefix.length > 0 ? hashText(legacyPrefix.join('\n')) : GENESIS_HASH)
+      : hashText(previousRaw);
+    const { entryHash, ...payload } = parsed;
+    const valid = parsed.prevHash === expectedPrev && entryHash === hashText(JSON.stringify(payload));
+    if (!valid) {
+      return {
+        status: 'broken',
+        totalLines: lines.length,
+        legacyLines: legacyPrefix.length,
+        chainedLines: chainedLines + 1,
+        verifiedLines,
+        firstBrokenLine: index + 1,
+      };
+    }
+    chainedLines += 1;
+    verifiedLines += 1;
+    previousRaw = raw;
+  }
+
+  return {
+    status: chainedLines > 0 ? 'valid' : 'legacy',
+    totalLines: lines.length,
+    legacyLines: legacyPrefix.length,
+    chainedLines,
+    verifiedLines,
+  };
+}
+
+export function createChainedAuditEntry(entry: AuditEntry, existingRaw = ''): AuditEntry {
+  const lines = nonEmptyLines(existingRaw);
+  const last = lines.at(-1);
+  const lastParsed = last ? (() => {
+    try {
+      return JSON.parse(last) as AuditEntry;
+    } catch {
+      return null;
+    }
+  })() : null;
+  const prevHash = lines.length === 0
+    ? GENESIS_HASH
+    : lastParsed?.entryHash
+      ? hashText(last as string)
+      : hashText(lines.join('\n'));
+  const payload: AuditEntry = { ...entry, chainVersion: 1, prevHash };
+  return { ...payload, entryHash: hashText(JSON.stringify(payload)) };
+}
+
+let auditWriteQueue: Promise<void> = Promise.resolve();
+
+async function appendAuditUnsafe(entry: AuditEntry): Promise<void> {
   try {
     const full = path.join(process.cwd(), AUDIT_PATH);
     await fs.mkdir(path.dirname(full), { recursive: true });
-    await fs.appendFile(full, `${JSON.stringify(entry)}\n`, 'utf-8');
+    const existingRaw = await fs.readFile(full, 'utf-8').catch(() => '');
+    const chained = createChainedAuditEntry(entry, existingRaw);
+    await fs.appendFile(full, `${JSON.stringify(chained)}\n`, 'utf-8');
   } catch {
     // 审计写入失败不应阻塞主流程（例如只读部署环境），仅静默降级
+  }
+}
+
+export async function appendAudit(entry: AuditEntry): Promise<void> {
+  auditWriteQueue = auditWriteQueue.then(() => appendAuditUnsafe(entry));
+  await auditWriteQueue;
+}
+
+export async function verifyAuditChain(): Promise<AuditChainReport> {
+  try {
+    const full = path.join(process.cwd(), AUDIT_PATH);
+    return verifyAuditLines(nonEmptyLines(await fs.readFile(full, 'utf-8')));
+  } catch {
+    return { status: 'empty', totalLines: 0, legacyLines: 0, chainedLines: 0, verifiedLines: 0 };
   }
 }
 
@@ -215,10 +413,14 @@ export async function readAudit(limit = 50): Promise<AuditEntry[]> {
   try {
     const full = path.join(process.cwd(), AUDIT_PATH);
     const raw = await fs.readFile(full, 'utf-8');
-    return raw
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => JSON.parse(line) as AuditEntry)
+    return nonEmptyLines(raw)
+      .flatMap((line) => {
+        try {
+          return [JSON.parse(line) as AuditEntry];
+        } catch {
+          return [];
+        }
+      })
       .slice(-limit)
       .reverse();
   } catch {

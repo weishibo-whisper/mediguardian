@@ -39,6 +39,7 @@ export interface LlmConfig {
   baseUrl: string;
   model: string;
   visionModel: string;
+  visionEnabled: boolean;
   temperature: number;
   enabled: boolean;
 }
@@ -50,16 +51,18 @@ export function getLlmConfig(): LlmConfig {
   const apiKey = process.env.LLM_API_KEY || '';
   const baseUrl = process.env.LLM_BASE_URL || preset?.baseUrl || '';
   const model = process.env.LLM_MODEL || preset?.model || '';
-  const visionModel = process.env.VISION_MODEL || preset?.visionModel || model;
+  const visionModel = process.env.VISION_MODEL || preset?.visionModel || '';
+  const enabled = provider !== 'mock' && Boolean(apiKey && baseUrl && model);
   return {
     provider,
     apiKey,
     baseUrl,
     model,
     visionModel,
+    visionEnabled: enabled && Boolean(visionModel),
     temperature: Number(process.env.LLM_TEMPERATURE ?? 0.2),
     // 未配置 key 时自动降级为本地规则引擎，保证演示永不空白
-    enabled: provider !== 'mock' && Boolean(apiKey && baseUrl && model),
+    enabled,
   };
 }
 
@@ -151,7 +154,10 @@ export async function* chatStream(
       const line = raw.trim();
       if (!line.startsWith('data:')) continue;
       const payload = line.slice(5).trim();
-      if (payload === '[DONE]') return;
+      if (payload === '[DONE]') {
+        if (usage) yield { delta: '', usage };
+        return;
+      }
       try {
         const json = JSON.parse(payload) as {
           choices?: Array<{ delta?: { content?: string } }>;
@@ -180,6 +186,7 @@ export async function* chatStream(
 export async function visionExtract(imageDataUrl: string, hint: string): Promise<string> {
   const config = getLlmConfig();
   if (!config.enabled) throw new Error('LLM_NOT_CONFIGURED');
+  if (!config.visionEnabled) throw new Error('VISION_MODEL_NOT_CONFIGURED');
 
   const res = await fetch(`${config.baseUrl.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',

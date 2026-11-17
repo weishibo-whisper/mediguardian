@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import { BookOpen, ShieldAlert, Shuffle } from 'lucide-react';
+import { BarChart3, BookOpen, ShieldAlert, Shuffle } from 'lucide-react';
 import { getIndex, getKbStats } from '@/lib/rag';
 import { getDrugs, getInteractions, getRedFlags } from '@/lib/data';
 import { getLlmConfig } from '@/lib/llm/provider';
 import { RetrievalPlayground } from '@/components/evidence/RetrievalPlayground';
+import ragResults from '@/data/eval/rag-results.json';
 
 export const metadata: Metadata = { title: '依据与规则 · 守药人 MediGuardian' };
 export const dynamic = 'force-dynamic';
@@ -29,6 +30,13 @@ export default async function EvidencePage() {
 
   const drugName = new Map(drugs.map((d) => [d.id, d.name]));
   const docList = [...index.docs].sort((a, b) => a.title.localeCompare(b.title, 'zh'));
+  const docsWithReferences = docList.filter((doc) => doc.source.references.length > 0).length;
+  const registeredReferences = docList.reduce((sum, doc) => sum + doc.source.references.length, 0);
+  const fullRetrieval = ragResults.configurations.find((configuration) => configuration.id === 'hybrid');
+  const bm25Baseline = ragResults.configurations.find((configuration) => configuration.id === 'bm25');
+  const recallGain = fullRetrieval && bm25Baseline
+    ? fullRetrieval.total.recall5 - bm25Baseline.total.recall5
+    : 0;
 
   const emergency = redFlags.filter((r) => r.level === 'emergency');
   const urgent = redFlags.filter((r) => r.level === 'urgent');
@@ -140,6 +148,71 @@ export default async function EvidencePage() {
         </div>
       </section>
 
+      {/* ================= 检索消融评测 ================= */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <BarChart3 size={13} className="text-ink-mute" />
+          <h2 className="text-[13px] font-semibold text-ink">检索消融评测</h2>
+          <span className="text-[11px] text-ink-mute">
+            {ragResults.probeCount} 条自标注探针 · 文档级 top {ragResults.documentTopK}
+          </span>
+        </div>
+        <div className="overflow-x-auto rounded-md border border-line">
+          <table className="w-full min-w-[680px] text-left text-xs">
+            <thead className="bg-surface-sunken text-[10.5px] text-ink-mute">
+              <tr>
+                <th className="px-3 py-2 font-medium">检索配置</th>
+                <th className="px-3 py-2 text-right font-medium">Hit@1</th>
+                <th className="px-3 py-2 text-right font-medium">Hit@3</th>
+                <th className="px-3 py-2 text-right font-medium">MRR@5</th>
+                <th className="px-3 py-2 text-right font-medium">Recall@5</th>
+                <th className="px-3 py-2 text-right font-medium">nDCG@5</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line bg-surface-raised">
+              {ragResults.configurations.map((configuration) => {
+                const isCurrent = configuration.id === 'hybrid';
+                return (
+                  <tr key={configuration.id} className={isCurrent ? 'bg-brand-50/70' : undefined}>
+                    <td className="px-3 py-2 font-medium text-ink">
+                      {configuration.label}
+                      {isCurrent ? <span className="ml-2 text-[9px] font-normal text-accent-text">当前默认</span> : null}
+                    </td>
+                    {(['hit1', 'hit3', 'mrr5', 'recall5', 'ndcg5'] as const).map((metric) => (
+                      <td key={metric} className="tnum px-3 py-2 text-right font-mono text-[11px] text-ink-soft">
+                        {configuration.total[metric].toFixed(3)}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="grid gap-px border border-line bg-line sm:grid-cols-3">
+          <div className="bg-surface px-3 py-2.5">
+            <p className="text-[10px] text-ink-mute">完整混合 Hit@1</p>
+            <p className="tnum mt-0.5 font-mono text-base font-semibold text-ink">
+              {fullRetrieval?.total.hit1.toFixed(3) ?? '—'}
+            </p>
+          </div>
+          <div className="bg-surface px-3 py-2.5">
+            <p className="text-[10px] text-ink-mute">相对纯 BM25 · Recall@5</p>
+            <p className="tnum mt-0.5 font-mono text-base font-semibold text-ok">
+              {recallGain >= 0 ? '+' : ''}{recallGain.toFixed(3)}
+            </p>
+          </div>
+          <div className="bg-surface px-3 py-2.5">
+            <p className="text-[10px] text-ink-mute">未完整召回全部标签</p>
+            <p className="tnum mt-0.5 font-mono text-base font-semibold text-warn">{ragResults.incomplete.length} 条</p>
+          </div>
+        </div>
+        <p className="border-l-2 border-warn px-3 py-2 text-[10.5px] leading-relaxed text-ink-soft">
+          {ragResults.disclaimer} 标签尚未由独立标注者复核；该表只证明检索组件在当前工程基准上的相对增益。
+          生成时间：{new Date(ragResults.generatedAt).toLocaleString('zh-CN', { hour12: false })}。
+        </p>
+      </section>
+
       {/* ================= 依据检索 ================= */}
       <section className="space-y-3">
         <div className="flex items-baseline gap-2">
@@ -164,6 +237,24 @@ export default async function EvidencePage() {
           <h2 className="text-[13px] font-semibold text-ink">知识来源清单</h2>
           <span className="text-[11px] text-ink-mute">{docList.length} 篇 · {stats.chunkCount} 段可检索</span>
         </div>
+        <p className="border-l-2 border-warn px-3 py-2 text-[11px] leading-relaxed text-ink-soft">
+          知识条目是项目整理的演示稿。下列链接为候选参考文献，书目元数据已核对，
+          但尚未逐条验证其是否支持对应段落、阈值或处置建议；目前未经过执业药师复核，不能作为临床依据。
+        </p>
+        <dl className="grid gap-px border border-line bg-line sm:grid-cols-3">
+          <div className="bg-surface px-3 py-2.5">
+            <dt className="text-[10px] text-ink-mute">已登记候选来源的知识条目</dt>
+            <dd className="tnum mt-0.5 font-mono text-sm font-semibold text-ink">{docsWithReferences} / {docList.length}</dd>
+          </div>
+          <div className="bg-surface px-3 py-2.5">
+            <dt className="text-[10px] text-ink-mute">候选参考文献</dt>
+            <dd className="tnum mt-0.5 font-mono text-sm font-semibold text-ink">{registeredReferences} 条</dd>
+          </div>
+          <div className="bg-surface px-3 py-2.5">
+            <dt className="text-[10px] text-ink-mute">已完成段落级专业复核</dt>
+            <dd className="tnum mt-0.5 font-mono text-sm font-semibold text-warn">0 条</dd>
+          </div>
+        </dl>
         <ul className="grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
           {docList.map((doc) => (
             <li key={doc.id} className="bg-surface px-3 py-2">
@@ -172,13 +263,31 @@ export default async function EvidencePage() {
                 <span>{doc.id}</span>
                 <span>· {doc.sectionCount} 段</span>
               </p>
+              {doc.source.references.length > 0 ? (
+                <ul className="mt-1.5 space-y-1 border-t border-line pt-1.5">
+                  {doc.source.references.map((reference) => (
+                    <li key={reference.doi}>
+                      <a
+                        href={reference.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-h-6 items-center text-[10px] leading-snug text-accent-text underline-offset-2 hover:underline"
+                      >
+                        {reference.title} ({reference.year})
+                      </a>
+                      <p className="font-mono text-[9px] text-ink-mute">DOI {reference.doi} · 内容映射待复核</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1.5 border-t border-line pt-1.5 text-[10px] text-warn">尚未登记可核验的外部来源</p>
+              )}
             </li>
           ))}
         </ul>
         <p className="text-[11px] leading-relaxed text-ink-mute">
-          全部条目为公开指南与说明书的整理稿，随仓库以 Markdown 分发，可直接打开原文核对。
-          演示数据不构成临床依据；实际用药调整须经执业医师确认。工程实现细节（数据流、检索算法、
-          评测方法）见仓库内 <code className="font-mono">docs/技术文档.md</code>。
+          来源登记文件为 <code className="font-mono">data/kb/sources.json</code>。实际用药调整须经执业医师确认；
+          工程实现细节与评测局限见仓库内 <code className="font-mono">docs/技术文档.md</code>。
         </p>
       </section>
     </div>
